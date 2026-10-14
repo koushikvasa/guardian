@@ -19,7 +19,7 @@ def emit(kind: str, case_id: str | None = None, **data) -> dict:
     del history[:-500]
     try:
         LOG.parent.mkdir(exist_ok=True)
-        with LOG.open("a") as f:
+        with LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(evt, ensure_ascii=False) + "\n")
     except Exception:
         pass

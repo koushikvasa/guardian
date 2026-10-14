@@ -7,9 +7,11 @@ AI scam shield for families. Built for Daytona HackSprint NYC (Fri Oct 16, 2026)
 - `web/` Next.js 15 App Router. `src/lib/guardian.ts` holds the one SSE connection (`useGuardian`) every screen reads.
 - Event names in `backend/README.md` are the contract between the two. Add events there first.
 
-## Commands
-- Backend mock: `cd backend && make mock` (all sponsors mocked), then `make demo-link|demo-family|demo-money`
-- Backend tests: `cd backend && make test && make eval`
+## Commands (Windows-friendly: use `python run.py`, there is no `make` on Windows)
+- Backend mock: `cd backend && python run.py mock`, then `python run.py demo link|family|money`, `python run.py watch`
+- Backend with real keys from `.env`: `python run.py dev`
+- Tests: `python run.py test` and `python run.py eval`
+- Sponsor smoke tests: `python run.py check elevenlabs|daytona|anchor|surreal|phoenix|bedrock`
 - Web: `cd web && npm run dev` (needs `NEXT_PUBLIC_API_URL`, default http://localhost:8000)
 
 ## Rules that must not break

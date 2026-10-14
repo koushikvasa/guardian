@@ -49,9 +49,9 @@ class Graph:
 
     # ---------- setup ----------
     def load_seed(self, path: Path = SEED):
-        fam = json.loads(path.read_text())
+        fam = json.loads(path.read_text(encoding="utf-8"))
         if self.live:
-            self.sql(SCHEMA.read_text())
+            self.sql(SCHEMA.read_text(encoding="utf-8"))
             self.sql("DELETE person; DELETE family; DELETE member_of;")
             self.sql("CREATE family:main CONTENT $f;", {"f": {k: v for k, v in fam.items() if k != "members"}})
             for m in fam["members"]:

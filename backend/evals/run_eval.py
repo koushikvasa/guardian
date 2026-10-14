@@ -34,7 +34,7 @@ def _url_hint(s):
 def main(paths):
     rows = []
     for p in paths:
-        with open(p, newline="") as f:
+        with open(p, newline="", encoding="utf-8") as f:
             rows += list(csv.DictReader(f))
     t0 = time.time()
     res = []
@@ -49,8 +49,8 @@ def main(paths):
     board = {"generated_at": time.strftime("%Y-%m-%d %H:%M"), "overall": stats(res),
              "by_lang": {l: stats([x for x in res if x.get("lang") == l]) for l in sorted({x.get("lang") for x in res})},
              "ms_per_message": round((time.time() - t0) * 1000 / max(1, len(res)), 1)}
-    (ROOT / "data" / "scoreboard.json").write_text(json.dumps(board, indent=2))
-    (ROOT / "data" / "eval_results.json").write_text(json.dumps(res, indent=2, ensure_ascii=False))
+    (ROOT / "data" / "scoreboard.json").write_text(json.dumps(board, indent=2), encoding="utf-8")
+    (ROOT / "data" / "eval_results.json").write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(board, indent=2))
     misses = [x for x in res if (x["truth"] == "scam") != x["flagged"]]
     for m in misses:

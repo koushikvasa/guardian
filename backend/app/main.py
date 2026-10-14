@@ -153,7 +153,7 @@ async def get_family():
 @app.post("/family")
 async def set_family(payload: dict):
     p = ROOT / "data" / "seed_family.json"
-    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     graph.load_seed(p)
     return {"ok": True}
 
@@ -161,7 +161,7 @@ async def set_family(payload: dict):
 @app.get("/scoreboard")
 async def scoreboard():
     p = ROOT / "data" / "scoreboard.json"
-    base = json.loads(p.read_text()) if p.exists() else {}
+    base = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
     live = [c for c in pipeline.cases.values() if c.get("status") == "closed"]
     ttc = [c["time_to_call_s"] for c in live if c.get("time_to_call_s") is not None]
     base["live"] = {

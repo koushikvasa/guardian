@@ -110,7 +110,7 @@ def _run_daytona(url: str, cdp_url: str | None = None) -> dict:
             f"os.environ['TARGET_URL'] = {url!r}\n"
             f"os.environ['CDP_URL'] = {(cdp_url or '')!r}\n"
             f"os.environ['TIMEOUT_S'] = '{config.DETONATE_TIMEOUT_S}'\n"
-            + JOB.read_text()
+            + JOB.read_text(encoding="utf-8")
         )
         resp = sb.process.code_run(code, timeout=config.DETONATE_TIMEOUT_S + 20)
         out = _parse(resp.result)
