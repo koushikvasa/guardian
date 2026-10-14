@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useReducer, useState } from "react";
 
-export const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+export const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787").replace(/\/$/, "");
 
 export type GEvent = { t: number; kind: string; case: string | null; [k: string]: unknown };
 

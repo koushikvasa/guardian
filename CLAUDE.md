@@ -12,7 +12,7 @@ AI scam shield for families. Built for Daytona HackSprint NYC (Fri Oct 16, 2026)
 - Backend with real keys from `.env`: `python run.py dev`
 - Tests: `python run.py test` and `python run.py eval`
 - Sponsor smoke tests: `python run.py check elevenlabs|daytona|anchor|surreal|phoenix|bedrock`
-- Web: `cd web && npm run dev` (needs `NEXT_PUBLIC_API_URL`, default http://localhost:8000)
+- Web: `cd web && npm run dev` (needs `NEXT_PUBLIC_API_URL`, default http://localhost:8787 (port 8000 is reserved on this Windows machine))
 
 ## Rules that must not break
 - Guardian never approves money; only Daniel's press-and-hold (`POST /cases/{id}/key`) can. No timeout auto-approves.

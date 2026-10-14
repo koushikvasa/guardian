@@ -15,7 +15,7 @@ import subprocess
 import sys
 import urllib.request
 
-PORT = os.environ.get("PORT", "8000")
+PORT = os.environ.get("PORT", "8787")
 BASE = f"http://localhost:{PORT}"
 PY = sys.executable
 
