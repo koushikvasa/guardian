@@ -12,7 +12,7 @@ export type CaseState = {
   lang?: string;
   status: "open" | "closed";
   verdict?: { score: number; label: "safe" | "suspicious" | "scam"; reasons: string[]; fired: Fired[] };
-  detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string };
+  detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string };
   liveView?: string | null;
   money?: { amount: number; method: string; state: "locked" | "declined" | "approved"; guardian?: string };
   calls: Record<string, { status: string; lines: { role: string; text: string }[] }>;
@@ -21,6 +21,7 @@ export type CaseState = {
   help?: { steps: string[]; title: string; audio_url?: string | null };
   evals?: Record<string, boolean>;
   timeToCall?: number | null;
+  memory?: { hits: { text: string; when: string; score: number }[]; trace_id?: string | null; tier?: string | null; prior_scam?: { what: string; date: string } | null };
 };
 
 export type State = { cases: Record<string, CaseState>; order: string[]; sms: GEvent[]; connected: boolean; last?: GEvent };
@@ -48,6 +49,7 @@ function reduce(s: State, e: GEvent | { kind: "__conn"; ok: boolean }): State {
   else if (k === "teachback") c.teachback = ev.ok as boolean;
   else if (k === "help.note.ready") c.help = { steps: ev.steps as string[], title: ev.title as string, audio_url: ev.audio_url as string | null };
   else if (k === "eval.live") c.evals = { grounded: !!ev.grounded, no_asks: !!ev.no_asks, language: !!ev.language };
+  else if (k === "memory.recalled") c.memory = { hits: (ev.hits as { text: string; when: string; score: number }[]) || [], trace_id: ev.trace_id as string | null, tier: ev.tier as string | null, prior_scam: (ev.prior_scam as { what: string; date: string } | null) ?? null };
   else if (k === "case.closed") { c.status = "closed"; c.timeToCall = ev.time_to_call_s as number | null; }
   else if (k.startsWith("call.")) {
     const [, call, phase] = k.split(".");

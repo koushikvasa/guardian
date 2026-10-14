@@ -43,6 +43,17 @@ export default function Stage() {
                 ))}
               </div>
             )}
+            {c.memory && c.memory.hits.length > 0 && (
+              <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>Guardian remembers</div>
+                {c.memory.hits.slice(0, 3).map((h, i) => (
+                  <div key={i} style={{ fontSize: 15, lineHeight: 1.4 }}>
+                    <span style={{ color: "var(--muted)", fontSize: 13, marginRight: 8 }}>{h.when}</span>{h.text}
+                  </div>
+                ))}
+                <div style={{ fontSize: 13, color: "var(--muted)" }}>SurrealDB Agent Memory · trace {c.memory.trace_id || "—"}{c.memory.tier ? ` · ${c.memory.tier}` : ""}</div>
+              </div>
+            )}
             {c.money && (
               <div className="card" style={{ borderColor: "var(--gold)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div className="serif" style={{ fontSize: 30 }}>${c.money.amount.toLocaleString()}</div>
@@ -70,7 +81,7 @@ export default function Stage() {
             <div style={{ background: "#F1F2F5", padding: "10px 16px", color: "#8C1D18", fontSize: 14 }}>{String(d.final_domain || "")}</div>
             {d.screenshot_url && <img src={`${API}${d.screenshot_url}`} alt="What the link opened, seen from inside the sandbox" style={{ width: "100%", display: "block" }} />}
             <div style={{ padding: "12px 16px", fontSize: 14, color: "var(--muted)" }}>
-              Opened in Daytona sandbox {String(d.sandbox_id || "")} with Anchor Browser · {d.redirects?.length || 0} redirects · domain {d.domain_age_days ?? "?"} days old · sandbox destroyed in {d.sandbox_destroyed_s ?? "?"}s
+              {d.mode === "quarantine" ? `Opened with Anchor Browser, parsed inside Daytona sandbox ${String(d.sandbox_id || "")}` : d.mode === "local" ? "Opened with Anchor Browser" : `Opened in Daytona sandbox ${String(d.sandbox_id || "")} with Anchor Browser`} · {d.redirects?.length || 0} redirects · domain {d.domain_age_days ?? "?"} days old{d.sandbox_destroyed_s != null ? ` · sandbox destroyed in ${d.sandbox_destroyed_s}s` : ""}
             </div>
           </div>
         )}

@@ -14,3 +14,5 @@ web/.next/
 web/out/
 .vercel
 .DS_Store
+backend/.venv/
+backend/data/.memory_seeded.*

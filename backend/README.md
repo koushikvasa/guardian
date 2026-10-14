@@ -28,8 +28,9 @@ Run the smoke tests in risk order:
 | 1 | `python scripts/check_elevenlabs.py +1YOURPHONE es` | A real Spanish call reaches your phone |
 | 2 | `python scripts/check_daytona.py` | Sandbox starts, reaches the network, deletes |
 | 3 | `python scripts/check_anchor.py https://example.com` | Anchor session + screenshot |
-| 4 | `make surreal` then `python scripts/check_surreal.py` | Trust graph + herd fingerprints |
-| 5 | `make phoenix` then `python scripts/check_phoenix.py` | Traces land in Phoenix |
+| 4 | `python scripts/check_memory.py` | SurrealDB Agent Memory: typed fact in, recall with a trace id out |
+| 4b | `make surreal` then `python scripts/check_surreal.py` | Trust graph + herd fingerprints (self-hosted SurrealDB) |
+| 5 | `python scripts/check_arize.py` | A trace and an experiment land in Arize AX (or `make phoenix` + `check_phoenix.py` for local Phoenix) |
 | 6 | `python scripts/check_bedrock.py` | Bedrock signal JSON |
 
 ElevenLabs agent prompts are in `agents/`. Each one lists its first message, system prompt and data-collection fields.
@@ -41,7 +42,9 @@ app/main.py          routes: /sms (Twilio), /events (SSE), /cases, /cases/{id}/k
 app/pipeline.py      the case engine + the three heroes + warning call + help note
 app/rules.py         deterministic verdict; every reason cites a rule (weights 0-29 safe, 30-59 suspicious, 60+ scam)
 app/signals.py       Bedrock JSON extraction (regex twin) + Textract OCR
-app/detonate.py      Daytona sandbox -> app/sandbox_job.py -> Anchor browser
+app/detonate.py      Daytona sandbox -> app/sandbox_job.py -> Anchor browser (or quarantine: Anchor here, parse in sandbox)
+app/quarantine_job.py runs inside the sandbox with no network: parses the untrusted HTML (forms, brands, frames)
+app/memory.py        SurrealDB Agent Memory: trust facts + remembered verdicts, recalled with a trace (mock twin)
 app/calls.py         ElevenLabs outbound calls, live captions by polling, post-call webhook
 app/graph.py         SurrealDB trust graph + scam fingerprints (in-memory twin)
 app/live_evals.py    grounded / no-asks / language checks on every case (Phoenix span attrs)
@@ -53,7 +56,8 @@ mock_sites/keystone  the ONLY page ever detonated on stage (fictional bank, form
 
 `case.opened` · `sms.in` · `sms.out` · `signals` · `detonation.started` · `detonation.result` · `verdict` ·
 `money.locked` · `key.decision` · `call.{warning|verify|second_key}.{dialing|connected|transcript|ended}` ·
-`verify.outcome` · `teachback` · `help.note.ready` · `herd.recorded` · `eval.live` · `case.closed`
+`verify.outcome` · `teachback` · `help.note.ready` · `herd.recorded` · `eval.live` · `case.closed` ·
+`memory.recalled` `{hits:[{text,when,score}], trace_id, tier, prior_scam:{what,date}|null}` · `memory.remembered` `{text, entities}`
 
 Every event is also appended to `data/events.log.jsonl`. That file is the stage backup: replay it into the UI if the network dies.
 

@@ -2,7 +2,8 @@
 
 Text-only (no detonation, no calls) so it runs in seconds. A message counts as "flagged" when the
 verdict is suspicious or scam. Writes data/scoreboard.json, which GET /scoreboard serves.
-If PHOENIX_COLLECTOR_ENDPOINT is set, also uploads the dataset and logs a Phoenix experiment.
+If ARIZE_SPACE_ID + ARIZE_API_KEY are set, also uploads the dataset and logs an Arize AX experiment
+(fallback: a Phoenix experiment when PHOENIX_COLLECTOR_ENDPOINT is set).
 
 usage: python evals/run_eval.py [csv ...]   (default: evals/seed_messages.csv + evals/*.extra.csv)
 """
@@ -55,8 +56,41 @@ def main(paths):
     misses = [x for x in res if (x["truth"] == "scam") != x["flagged"]]
     for m in misses:
         print(f"  MISS [{m['truth']} -> {m['pred']} {m['score']}] {m['text'][:90]}")
-    if config.live(config.PHOENIX_COLLECTOR_ENDPOINT):
+    if config.live(config.ARIZE_SPACE_ID, config.ARIZE_API_KEY):
+        _arize(rows)
+    elif config.live(config.PHOENIX_COLLECTOR_ENDPOINT):
         _phoenix(rows)
+
+
+def _arize(rows):
+    """Dataset + experiment in Arize AX. Task = the deterministic rules; evaluator = caught the scam / no false alarm."""
+    try:
+        import pandas as pd
+        from arize import ArizeClient
+        from arize.experiments import EvaluationResult
+
+        client = ArizeClient(api_key=config.ARIZE_API_KEY)
+        df = pd.DataFrame({
+            "attributes.input.value": [r["text"] for r in rows],
+            "attributes.output.value": [r["label"] for r in rows],
+            "attributes.metadata": [{"lang": r.get("lang", ""), "source": r.get("source", "")} for r in rows],
+        })
+        ds = client.datasets.create(space=config.ARIZE_SPACE_ID, name=f"guardian-msgs-{int(time.time())}", examples=df)
+
+        def task(input):
+            return json.dumps(predict(input), ensure_ascii=False)
+
+        def caught(output, dataset_output):  # arg names are fixed by the SDK: output, dataset_output, input, dataset_row, metadata
+            out = json.loads(output)
+            ok = out["flagged"] == (dataset_output == "scam")
+            return EvaluationResult(score=float(ok), label="correct" if ok else ("missed" if dataset_output == "scam" else "false_alarm"),
+                                    explanation=f"rules fired: {', '.join(out['rules']) or 'none'}")
+
+        exp, _ = client.experiments.run(name=f"rules-v1-{time.strftime('%m%d-%H%M')}", dataset=ds.id, space=config.ARIZE_SPACE_ID,
+                                        task=task, evaluators=[caught], concurrency=4, exit_on_error=False)
+        print("Arize AX experiment logged:", getattr(exp, "id", exp))
+    except Exception as e:
+        print("Arize AX experiment skipped:", e)
 
 
 def _phoenix(rows):

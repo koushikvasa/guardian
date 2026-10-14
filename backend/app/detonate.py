@@ -1,8 +1,11 @@
 """Hero 3: open the link so the family doesn't have to.
 
-daytona: fresh Daytona sandbox -> runs sandbox_job.py -> Anchor browser -> JSON -> sandbox deleted
-local:   same job as a local subprocess (fallback if the Daytona tier blocks outbound network)
-mock:    canned result for the Keystone demo page
+daytona:    fresh Daytona sandbox -> runs sandbox_job.py -> Anchor browser -> JSON -> sandbox deleted
+quarantine: Anchor browser opens the link (driven from here, no parsing) -> the untrusted bytes go into a fresh
+            Daytona sandbox that runs quarantine_job.py -> JSON -> sandbox deleted. Works on Daytona tiers
+            that block sandbox egress, because the sandbox needs no network at all.
+local:      same job as a local subprocess (fallback when Daytona isn't configured)
+mock:       canned result for the Keystone demo page
 """
 import asyncio
 import base64
@@ -19,6 +22,7 @@ from . import bus, config
 from .tracing import span
 
 JOB = Path(__file__).with_name("sandbox_job.py")
+QJOB = Path(__file__).with_name("quarantine_job.py")
 SHOTS = Path(__file__).resolve().parent.parent / "data" / "shots"
 MOCK_SHOT = Path(__file__).resolve().parent.parent / "mock_sites" / "keystone" / "screenshot.jpg"
 
@@ -27,15 +31,15 @@ async def detonate(url: str, case_id: str) -> dict:
     mode = config.DETONATE_MODE
     if not config.live(config.ANCHOR_API_KEY) or mode == "mock":
         mode = "mock"
-    elif mode == "daytona" and not config.live(config.DAYTONA_API_KEY):
+    elif mode in ("daytona", "quarantine") and not config.live(config.DAYTONA_API_KEY):
         mode = "local"
     with span("detonate", url=url, mode=mode) as s:
         t0 = time.time()
-        if mode in ("daytona", "local"):
+        if mode in ("daytona", "local", "quarantine"):
             sess = await _anchor_session()
             bus.emit("detonation.live", case_id, live_view_url=sess.get("live_view_url"), session=sess.get("id"))
             try:
-                fn = _run_daytona if mode == "daytona" else _run_local
+                fn = {"daytona": _run_daytona, "local": _run_local, "quarantine": _run_quarantine}[mode]
                 result = await asyncio.to_thread(fn, url, sess.get("cdp_url"))
             finally:
                 await _anchor_close(sess.get("id"))
@@ -104,7 +108,7 @@ def _run_daytona(url: str, cdp_url: str | None = None) -> dict:
     t_created = time.time()
     try:
         if not snap:
-            sb.process.exec("pip install -q playwright==1.48.0", timeout=120)
+            sb.process.exec("pip install -q playwright", timeout=120)  # unpinned: the default image is Python 3.14
         code = (
             "import os\n"
             f"os.environ['TARGET_URL'] = {url!r}\n"
@@ -124,6 +128,88 @@ def _run_daytona(url: str, cdp_url: str | None = None) -> dict:
     out["sandbox_id"] = getattr(sb, "id", "")
     out["sandbox_destroyed_s"] = out_del
     out["sandbox_lifetime_s"] = round(time.time() - t_created, 2)
+    return out
+
+
+# ---------------- quarantine: fetch here (Anchor), parse in a sandbox with no network ----------------
+def _fetch_with_anchor(url: str, cdp_url: str) -> dict:
+    """Drive the Anchor cloud browser over CDP. Only observes; returns raw bytes for the sandbox to parse."""
+    import urllib.parse
+    from playwright.sync_api import sync_playwright
+
+    target = url if url.startswith("http") else "https://" + url
+    redirects, out = [], {"download_attempted": False}
+    with sync_playwright() as p:
+        browser = p.chromium.connect_over_cdp(cdp_url)
+        ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+        page = ctx.pages[0] if ctx.pages else ctx.new_page()
+        page.on("response", lambda r: redirects.append(r.url) if 300 <= r.status < 400 and r.request.is_navigation_request() else None)
+        page.on("download", lambda d: out.__setitem__("download_attempted", True) or d.cancel())
+        page.goto(target, wait_until="domcontentloaded", timeout=config.DETONATE_TIMEOUT_S * 1000)
+        page.wait_for_timeout(1500)
+        out.update({
+            "final_url": page.url,
+            "title": page.title(),
+            "html": page.content(),  # untrusted: parsed only inside the sandbox
+            "redirects": redirects,
+            "shortener": urllib.parse.urlparse(target).hostname in SHORTENERS,
+            "screenshot_b64": base64.b64encode(page.screenshot(type="jpeg", quality=60, full_page=False)).decode(),
+            "target": target,
+        })
+        browser.close()
+    return out
+
+
+SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "cutt.ly", "rb.gy", "is.gd", "t.ly")
+
+
+def _analyze_in_sandbox(fetched: dict) -> dict:
+    """The untrusted HTML is parsed inside a throwaway Daytona sandbox that has no network access."""
+    from daytona import CreateSandboxFromSnapshotParams, Daytona, DaytonaConfig
+
+    d = Daytona(DaytonaConfig(api_key=config.DAYTONA_API_KEY))
+    snap = os.environ.get("DAYTONA_SNAPSHOT", "")
+    sb = d.create(CreateSandboxFromSnapshotParams(snapshot=snap)) if snap else d.create()
+    t_created = time.time()
+    try:
+        page = {k: fetched.get(k) for k in ("html", "title", "final_url", "target")}
+        sb.fs.upload_file(json.dumps(page, ensure_ascii=False).encode("utf-8"), "/tmp/page.json")
+        resp = sb.process.code_run(QJOB.read_text(encoding="utf-8"), timeout=config.DETONATE_TIMEOUT_S + 20)
+        out = _parse(resp.result or "")
+    finally:
+        t_del = time.time()
+        try:
+            d.delete(sb)
+        except AttributeError:
+            sb.delete()
+        out_del = round(time.time() - t_del, 2)
+    out["sandbox_id"] = getattr(sb, "id", "")
+    out["sandbox_destroyed_s"] = out_del
+    out["sandbox_lifetime_s"] = round(time.time() - t_created, 2)
+    return out
+
+
+def _domain_age_days(domain: str) -> int | None:
+    try:
+        r = httpx.get(f"https://rdap.org/domain/{domain}", timeout=6, follow_redirects=True)
+        for ev in r.json().get("events", []):
+            if ev.get("eventAction") == "registration":
+                t = time.strptime(ev["eventDate"][:10], "%Y-%m-%d")
+                return int((time.time() - time.mktime(t)) // 86400)
+    except Exception:
+        return None
+    return None
+
+
+def _run_quarantine(url: str, cdp_url: str | None = None) -> dict:
+    fetched = _fetch_with_anchor(url, cdp_url)
+    analysed = _analyze_in_sandbox(fetched)
+    host = analysed.get("final_domain") or ""
+    parts = host.lower().split(".")
+    reg = ".".join(parts[-2:]) if len(parts) >= 2 else host
+    out = {k: v for k, v in fetched.items() if k != "html"}
+    out.update(analysed)
+    out["domain_age_days"] = _domain_age_days(reg) if reg else None
     return out
 
 

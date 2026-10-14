@@ -5,7 +5,10 @@ from pathlib import Path
 try:
     from dotenv import load_dotenv  # optional
 
-    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    _root = Path(__file__).resolve().parent.parent
+    # Process env always wins (run.py mock / tests set GUARDIAN_MOCK=1); then .env.local, then .env. Both gitignored.
+    load_dotenv(_root / ".env.local")
+    load_dotenv(_root / ".env")
 except Exception:
     pass
 
@@ -52,9 +55,17 @@ BEDROCK_MODEL_ID = _get("BEDROCK_MODEL_ID")  # e.g. a Claude model id enabled in
 AWS_REGION = _get("AWS_REGION", "us-east-1")
 USE_TEXTRACT = _get("USE_TEXTRACT", "0") == "1"
 
-# --- Arize Phoenix ---
+# --- Arize AX (cloud; preferred) or self-hosted Phoenix (fallback) ---
+ARIZE_SPACE_ID = _get("ARIZE_SPACE_ID")
+ARIZE_API_KEY = _get("ARIZE_API_KEY")
+ARIZE_PROJECT = _get("ARIZE_PROJECT", "guardian")
 PHOENIX_COLLECTOR_ENDPOINT = _get("PHOENIX_COLLECTOR_ENDPOINT")  # e.g. http://localhost:6006
 PHOENIX_PROJECT = _get("PHOENIX_PROJECT", "guardian")
+
+# --- SurrealDB Agent Memory (hosted) ---
+SURREAL_MEMORY_URL = _get("SURREAL_MEMORY_URL")  # context host, e.g. https://xxxx.agent-memory.surrealdb.com
+SURREAL_MEMORY_KEY = _get("SURREAL_MEMORY_KEY")  # sp-...
+SURREAL_MEMORY_CONTEXT = _get("SURREAL_MEMORY_CONTEXT")
 
 # --- Mock behaviour (for rehearsal without phones) ---
 MOCK_VERIFY_OUTCOME = _get("MOCK_VERIFY_OUTCOME", "denied")  # denied | confirmed | no_answer
@@ -75,5 +86,7 @@ def status() -> dict:
         "twilio_sms": live(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM),
         "surrealdb": live(SURREAL_URL),
         "bedrock": live(BEDROCK_MODEL_ID),
-        "phoenix": live(PHOENIX_COLLECTOR_ENDPOINT),
+        "arize": live(ARIZE_SPACE_ID, ARIZE_API_KEY),
+        "phoenix": live(PHOENIX_COLLECTOR_ENDPOINT) and not live(ARIZE_SPACE_ID, ARIZE_API_KEY),
+        "surreal_memory": live(SURREAL_MEMORY_URL, SURREAL_MEMORY_KEY, SURREAL_MEMORY_CONTEXT),
     }

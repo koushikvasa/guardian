@@ -6,6 +6,7 @@
        claims to be family    -> Verify-by-callback (Hero 1)
        otherwise              -> text verdict, warning call if scam
   -> teach-back -> help voice note -> live evals -> fingerprints into the herd graph
+  -> remember the verdict (SurrealDB Agent Memory), recalled with a trace on the next case
 
 Guardian never approves money on its own and never asks for codes, passwords or payments.
 """
@@ -20,6 +21,7 @@ from . import bus, calls, config, live_evals, rules, sms
 from .detonate import detonate
 from .graph import graph, norm_phone
 from .i18n import t
+from .memory import memory
 from .scrub import scrub
 from .signals import detect_lang, embed, extract
 from .tracing import span
@@ -66,6 +68,12 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
             case["detonation"] = det
             bus.emit("detonation.result", case_id, **det)
 
+        # What Guardian remembers about this link / sender / story (typed facts + retrieval trace)
+        recalled = await asyncio.to_thread(memory.recall_for_case, case, det)
+        prior = memory.prior_scam(recalled["hits"], signals, det, original_sender, sender)
+        case["memory"] = {**recalled, "prior_scam": prior}
+        bus.emit("memory.recalled", case_id, **case["memory"])
+
         fps = _fingerprints(signals, det, case["text"])
         herd = graph.herd_hits(fps)
         vec = await asyncio.to_thread(embed, case["text"])
@@ -73,7 +81,7 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
         if similar:
             herd += len(similar)
             bus.emit("herd.similar", case_id, matches=[{"case": str(m["id"]), "sim": round(m["sim"], 2)} for m in similar])
-        v = rules.evaluate(signals, sender, det, herd, lang)
+        v = rules.evaluate(signals, sender, det, herd, lang, memory=prior)
         case["verdict"] = {"score": v.score, "label": v.label, "critical": v.critical, "fired": v.fired, "reasons": v.reasons(), "herd": herd}
         bus.emit("verdict", case_id, **case["verdict"])
         root.set("verdict", v.label)
@@ -94,6 +102,7 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
             await asyncio.to_thread(graph.record_case, {k: case[k] for k in ("id", "protected", "lang", "text", "verdict")}, fps)
             await asyncio.to_thread(graph.store_scam_text, case_id, case["text"], vec)
             bus.emit("herd.recorded", case_id, fingerprints=len(fps))
+            await asyncio.to_thread(memory.remember_verdict, case, det, original_sender, protected["name"])
 
         case["evals"] = live_evals.run(case, case["outbound"])
         bus.emit("eval.live", case_id, **case["evals"])

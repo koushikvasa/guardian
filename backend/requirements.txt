@@ -7,7 +7,9 @@ python-dotenv>=1.0
 daytona>=0.10          # Daytona SDK
 playwright==1.48.0     # drives the Anchor cloud browser over CDP (no local browser download needed)
 boto3>=1.34            # AWS Bedrock + Textract
-arize-phoenix>=5.0     # Phoenix server + client + experiments
+arize>=8.0             # Arize AX datasets + experiments
+arize-otel>=0.7        # Arize AX tracing (register)
+arize-phoenix>=5.0     # Phoenix fallback: server + client + experiments
 arize-phoenix-otel>=0.6
 openinference-instrumentation-bedrock>=0.1
 pandas>=2.0

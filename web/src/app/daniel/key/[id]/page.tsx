@@ -39,6 +39,14 @@ export default function DanielKey({ params }: { params: Promise<{ id: string }> 
               <div key={f.rule} style={{ fontSize: 16, lineHeight: 1.35 }}>• {f.reason_en ?? f.reason}</div>
             ))}
           </div>
+          {c.memory && c.memory.hits.length > 0 && (
+            <div className="card" style={{ marginTop: 14, padding: "12px 14px" }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Guardian remembers</div>
+              {c.memory.hits.slice(0, 2).map((h, i) => (
+                <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4 }}><span style={{ color: "var(--muted)" }}>{h.when} · </span>{h.text}</div>
+              ))}
+            </div>
+          )}
           <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12, paddingTop: 24 }}>
             {state === "locked" ? (
               <>

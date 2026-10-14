@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 RULES = {
     "herd_match": (100, {"en": "Another family already reported this exact scam.", "es": "Otra familia ya reportó esta misma estafa."}),
+    "remembered_scam": (60, {"en": "Guardian remembers: the same {what} was a scam on {date}.", "es": "Guardian lo recuerda: el mismo {what} fue una estafa el {date}."}),
     "credential_form_new_domain": (40, {"en": "Asks for passwords or card numbers on a site created {age} days ago.", "es": "Pide contraseña o tarjeta en un sitio creado hace {age} días."}),
     "untraceable_payment": (35, {"en": "Wants {method}, which can't be undone.", "es": "Pide {method}, que no se puede deshacer."}),
     "brand_domain_mismatch": (30, {"en": "Looks like {brand}, but the address is {domain}.", "es": "Parece de {brand}, pero la dirección es {domain}."}),
@@ -23,6 +24,7 @@ METHOD_NAMES = {
     "en": {"gift_card": "gift cards", "wire": "a wire transfer", "crypto": "crypto", "zelle": "Zelle", "western_union": "Western Union", "cash_courier": "cash by courier", "bitcoin_atm": "a Bitcoin ATM"},
     "es": {"gift_card": "tarjetas de regalo", "wire": "una transferencia", "crypto": "cripto", "zelle": "Zelle", "western_union": "Western Union", "cash_courier": "efectivo por mensajero", "bitcoin_atm": "un cajero de Bitcoin"},
 }
+WHAT_NAMES = {"en": {"link": "link", "sender": "sender", "story": "story"}, "es": {"link": "enlace", "sender": "remitente", "story": "cuento"}}
 SAFE_MAX, SUSPICIOUS_MAX = 29, 59
 
 
@@ -37,7 +39,9 @@ class Verdict:
         return [f["reason"] for f in self.fired if f["weight"] > 0]
 
 
-def evaluate(signals: dict, sender: dict, detonation: dict | None, herd_hits: int, lang: str = "en") -> Verdict:
+def evaluate(signals: dict, sender: dict, detonation: dict | None, herd_hits: int, lang: str = "en",
+             memory: dict | None = None) -> Verdict:
+    """memory: {"what": link|sender|story, "date": YYYY-MM-DD} when Agent Memory holds a matching scam verdict."""
     lang = lang if lang in ("en", "es") else "en"
     fired: list[dict] = []
 
@@ -48,10 +52,14 @@ def evaluate(signals: dict, sender: dict, detonation: dict | None, herd_hits: in
             en["method"] = next((METHOD_NAMES["en"][k] for k, v in METHOD_NAMES[lang].items() if v == fmt["method"]), fmt["method"])
         if en.get("name") == "un familiar":
             en["name"] = "a relative"
+        if "what" in en:
+            en["what"] = next((k for k, v in WHAT_NAMES[lang].items() if v == fmt["what"]), fmt["what"])
         fired.append({"rule": rule, "weight": weight, "reason": text[lang].format(**fmt), "reason_en": text["en"].format(**en)})
 
     if herd_hits > 0:
         fire("herd_match")
+    if memory and memory.get("what") in WHAT_NAMES["en"]:
+        fire("remembered_scam", what=WHAT_NAMES[lang][memory["what"]], date=memory.get("date") or "")
 
     d = detonation or {}
     age = d.get("domain_age_days")

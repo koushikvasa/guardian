@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import bus, calls, config, pipeline, tracing
 from .graph import graph
+from .memory import memory
 
 ROOT = Path(__file__).resolve().parent.parent
 app = FastAPI(title="Guardian")
@@ -44,6 +45,7 @@ DEMO = {
 async def startup():
     tracing.init()
     graph.load_seed()
+    asyncio.create_task(asyncio.to_thread(memory.seed_family, graph.family()))  # once per memory context
     print("[guardian] sponsors live:", json.dumps(config.status()))
 
 
