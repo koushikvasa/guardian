@@ -1,0 +1,16 @@
+# secrets
+.env
+.env.local
+# python
+__pycache__/
+.pytest_cache/
+backend/data/events.log.jsonl
+backend/data/shots/
+backend/data/notes/
+backend/data/eval_results.json
+# node
+web/node_modules/
+web/.next/
+web/out/
+.vercel
+.DS_Store

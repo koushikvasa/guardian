@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-10-14 10:36",
+  "overall": {
+    "n": 40,
+    "catch_rate": 0.9,
+    "false_alarm_rate": 0.0
+  },
+  "by_lang": {
+    "en": {
+      "n": 20,
+      "catch_rate": 0.9,
+      "false_alarm_rate": 0.0
+    },
+    "es": {
+      "n": 20,
+      "catch_rate": 0.9,
+      "false_alarm_rate": 0.0
+    }
+  },
+  "ms_per_message": 0.3
+}

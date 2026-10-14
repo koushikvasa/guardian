@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Keystone Bank | Verifique su cuenta</title>
+<style>
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#F4F6F9;color:#1C2430}
+  header{background:#23408E;color:#fff;padding:16px 24px;font-weight:800;font-size:22px}
+  main{max-width:380px;margin:40px auto;background:#fff;border-radius:10px;padding:28px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+  h1{font-size:20px;margin:0 0 6px}
+  p{font-size:14px;color:#555;margin:0 0 18px}
+  label{display:block;font-size:13px;margin:12px 0 4px;color:#333}
+  input{width:100%;box-sizing:border-box;height:40px;border:1px solid #C9CED6;border-radius:6px;padding:0 10px;font-size:14px}
+  button{margin-top:18px;width:100%;height:42px;border:0;border-radius:6px;background:#23408E;color:#fff;font-weight:600;font-size:15px}
+  footer{font-size:11px;color:#999;text-align:center;margin:20px}
+</style>
+</head>
+<body>
+<header>Keystone Bank</header>
+<main>
+  <h1>Verifique su cuenta</h1>
+  <p>Su cuenta está bloqueada. Confirme sus datos en 24 horas para evitar la suspensión.</p>
+  <!-- DEMO ONLY: no action, nothing is ever sent anywhere -->
+  <form onsubmit="return false">
+    <label for="u">Usuario</label><input id="u" name="usuario" autocomplete="off">
+    <label for="p">Contraseña</label><input id="p" name="contrasena" type="password" autocomplete="off">
+    <label for="c">Número de tarjeta y CVV</label><input id="c" name="tarjeta" autocomplete="off">
+    <button type="button">Continuar</button>
+  </form>
+</main>
+<footer>Guardian demo specimen · fictional bank · this form sends nothing</footer>
+</body>
+</html>

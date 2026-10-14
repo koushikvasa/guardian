@@ -1,0 +1,12 @@
+{
+  "name": "Familia Morales",
+  "safe_phrase": "flan de la abuela",
+  "second_key_threshold_usd": 500,
+  "members": [
+    {"id": "rosa", "name": "Rosa", "role": "protected", "phone": "+1 555 010 0001", "lang": "es",
+     "story_facts": ["Daniel works at the hospital on weekdays", "Daniel drives a gray Corolla", "Daniel lives in Queens"]},
+    {"id": "daniel", "name": "Daniel", "role": "guardian", "phone": "+1 555 010 0002", "lang": "en"},
+    {"id": "ana", "name": "Ana", "role": "member", "phone": "+1 555 010 0003", "lang": "es"}
+  ],
+  "_note": "Replace phones with real demo numbers (yours as Rosa, the consenting judge or friend as Daniel). Never commit real numbers."
+}

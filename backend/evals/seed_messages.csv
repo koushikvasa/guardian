@@ -1,0 +1,41 @@
+text,label,lang
+"Banco Keystone: Su cuenta está bloqueada. Verifique en 24 horas: bit.ly/kst-verif",scam,es
+"USPS: Su paquete no pudo ser entregado. Pague $1.99 de envío aquí: usps-entrega.top/pago",scam,es
+"Mamá soy Daniel, choqué el carro y estoy detenido. Te llamo de otro número, no le digas a nadie",scam,es
+"Mamá necesito $2,000 por transferencia para la fianza, urgente. No le digas a nadie",scam,es
+"Abuela soy tu nieto, estoy en problemas, necesito que compres tarjetas de regalo de Google Play ahora mismo",scam,es
+"Felicidades, ganó un premio de $5,000. Para reclamarlo envíe $50 en bitcoin hoy mismo",scam,es
+"Aviso final del IRS: tiene una deuda. Pague inmediatamente con tarjetas de regalo o será arrestado",scam,es
+"Su cuenta de Amazon fue suspendida. Ingrese aquí en 24 horas: amaz0n-soporte.xyz",scam,es
+"Hola mamá, este es mi número nuevo. Necesito que me hagas un Zelle de $800 urgente, luego te explico",scam,es
+"Chase: Detectamos un cargo de $899. Si no fue usted, llame y dé el código que le enviamos",scam,es
+"Hola Rosa, ¿vienes a la misa del domingo? Te guardo un lugar",ham,es
+"Mamá, salgo del trabajo a las 6, ¿quieres que pase por tortillas?",ham,es
+"Su cita con el Dr. López es el martes a las 10:00. Responda C para confirmar",ham,es
+"Rosa, la reunión del club de lectura se movió al jueves",ham,es
+"Ya llegué a casa, gracias por la comida de hoy",ham,es
+"Feliz cumpleaños tía, que Dios la bendiga mucho",ham,es
+"Farmacia: Su receta está lista para recoger",ham,es
+"¿Me pasas la receta del flan? Quedó riquísimo",ham,es
+"El partido empieza a las 7, nos vemos allá",ham,es
+"Mañana no hay clases de zumba, la maestra está enferma",ham,es
+"Keystone Bank: Your account is locked. Verify within 24 hours: bit.ly/kst-verif",scam,en
+"Grandma it's me, I'm in jail and need $3,000 for bail. Please don't tell mom",scam,en
+"Mom it's me, new number. Can you send $600 by Zelle right now? I'll explain later",scam,en
+"Your PayPal has been limited. Confirm your identity: paypal-secure-check.top",scam,en
+"You won a $1,000 Walmart gift card! Claim within 24 hours: tinyurl.com/claim-wm",scam,en
+"IRS final notice: pay your balance immediately with gift cards to avoid arrest",scam,en
+"Hi grandpa, I'm stuck abroad, please wire $1,500 urgent, keep this between us",scam,en
+"Wells Fargo alert: unusual sign-in. Verify now: wf-alerts.click/login",scam,en
+"Your Netflix payment failed. Update card details: netflx-billing.online",scam,en
+"Crypto investment opportunity, double your money in 7 days, send bitcoin today",scam,en
+"Hey, are we still on for dinner Friday?",ham,en
+"Your table at Rosa's Cantina is confirmed for 7pm",ham,en
+"Mom I landed, will call you after the meeting",ham,en
+"Reminder: dentist appointment tomorrow at 2pm",ham,en
+"Can you send me the photo from the wedding?",ham,en
+"The plumber is coming between 9 and 11",ham,en
+"Your Amazon order has shipped and arrives Thursday",ham,en
+"Happy birthday! Hope you have a great day",ham,en
+"Team practice moved to 5:30 today",ham,en
+"Library: the book you reserved is ready for pickup",ham,en

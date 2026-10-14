@@ -1,0 +1,19 @@
+# Render Blueprint: one-click backend deploy from this repo (New > Blueprint > pick this repo).
+# Fastest way to get the backend live today. Move to AWS App Runner (backend/Dockerfile) once AWS creds are in.
+services:
+  - type: web
+    name: guardian-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GUARDIAN_MOCK
+        value: "1"          # flip to 0 as real sponsor keys are added in the Render dashboard
+      - key: MOCK_CALL_SPEED
+        value: "0.6"
+      - key: INGEST_TOKEN
+        generateValue: true
+      - key: UI_BASE_URL
+        sync: false         # set to your Vercel URL

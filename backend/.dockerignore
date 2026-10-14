@@ -1,0 +1,6 @@
+.env
+.git
+data/events.log.jsonl
+data/shots
+data/notes
+__pycache__

@@ -1,0 +1,22 @@
+:root {
+  --bg: #EEF1F6;
+  --ink: #161B33;
+  --muted: #4A5170;
+  --line: #D5DAE6;
+  --card: #FFFFFF;
+  --accent: #2E46E5;
+  --danger: #D7322A;
+  --gold: #B8862B;
+  --ok: #14705A;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Figtree', system-ui, sans-serif; }
+a { color: var(--accent); }
+.serif { font-family: 'Young Serif', Georgia, serif; font-weight: 400; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; }
+.btn { min-height: 52px; border-radius: 14px; border: none; padding: 0 20px; font: inherit; font-weight: 700; font-size: 17px; cursor: pointer; }
+.btn-dark { background: var(--ink); color: #fff; }
+.btn-ghost { background: transparent; border: 2px solid var(--line); color: var(--ink); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.phone { width: 390px; min-height: 844px; margin: 0 auto; padding: 28px 22px; display: flex; flex-direction: column; }
+@media (max-width: 420px) { .phone { width: 100%; min-height: 100vh; } }
