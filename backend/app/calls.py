@@ -1,11 +1,13 @@
 """ElevenLabs Agents + Twilio outbound calls.
 
-Live: POST /v1/convai/twilio/outbound-call, then poll GET /v1/convai/conversations/{id}
-      for transcript lines (shown as live captions) and the agent's data-collection results.
+Live: POST /v1/convai/twilio/outbound-call, then poll GET /v1/convai/conversations/{id}.
+      Status goes initiated -> in-progress -> processing -> done; the transcript and the data-collection
+      results only appear at "done" (verified 2026-10-14), so captions arrive together at the end.
       The post-call webhook (/webhooks/elevenlabs) resolves the call faster when configured.
 Mock: a scripted transcript is played as events, outcome from MOCK_* settings.
 """
 import asyncio
+import re
 import time
 
 import httpx
@@ -14,6 +16,12 @@ from . import bus, config
 from .tracing import span
 
 API = "https://api.elevenlabs.io/v1/convai"
+_TAGS = re.compile(r"\[(?:slow|warm|happy|calm|sad|excited|whisper|laughs?|sighs?|pause|[a-z ]{1,20})\]\s*")
+
+
+def caption(text: str) -> str:
+    """Transcript lines carry v4 delivery tags like [slow] [warm]; they aren't spoken, so keep them off the screen."""
+    return _TAGS.sub("", text or "").strip()
 _waiters: dict[str, asyncio.Future] = {}  # conversation_id -> future(result)
 
 
@@ -79,14 +87,16 @@ async def _live_call(kind, case_id, to_phone, agent_id, variables, max_wait_s):
                     continue
                 conv = g.json()
                 tr = conv.get("transcript") or []
-                if tr and not connected:
+                status = conv.get("status")
+                # ElevenLabs only exposes the transcript once the call is done ("processing" -> "done"),
+                # so "connected" comes from the status, and the captions arrive together at the end.
+                if (status in ("in-progress", "processing") or tr) and not connected:
                     connected = True
                     bus.emit(f"call.{kind}.connected", case_id)
                 for line in tr[seen:]:
-                    if line.get("message"):
-                        bus.emit(f"call.{kind}.transcript", case_id, role=line.get("role"), text=line["message"])
+                    if caption(line.get("message")):
+                        bus.emit(f"call.{kind}.transcript", case_id, role=line.get("role"), text=caption(line["message"]))
                 seen = len(tr)
-                status = conv.get("status")
                 if status in ("done", "failed"):
                     return _result_from_conversation(conv, connected)
             return {"status": "no_answer", "data": {}, "transcript": []}
@@ -98,7 +108,7 @@ def _result_from_conversation(conv: dict, connected: bool) -> dict:
     analysis = conv.get("analysis") or {}
     dc = analysis.get("data_collection_results") or {}
     data = {k: (v.get("value") if isinstance(v, dict) else v) for k, v in dc.items()}
-    tr = conv.get("transcript") or []
+    tr = [{**t, "message": caption(t.get("message"))} for t in (conv.get("transcript") or [])]
     user_spoke = any(t.get("role") == "user" and t.get("message") for t in tr)
     if conv.get("status") == "failed" or not (connected and user_spoke):
         return {"status": "no_answer", "data": data, "transcript": tr}
