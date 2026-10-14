@@ -36,11 +36,15 @@ async def detonate(url: str, case_id: str) -> dict:
     with span("detonate", url=url, mode=mode) as s:
         t0 = time.time()
         if mode in ("daytona", "local", "quarantine"):
-            sess = await _anchor_session()
-            bus.emit("detonation.live", case_id, live_view_url=sess.get("live_view_url"), session=sess.get("id"))
+            sess = {}
             try:
+                sess = await _anchor_session()
+                bus.emit("detonation.live", case_id, live_view_url=sess.get("live_view_url"), session=sess.get("id"))
                 fn = {"daytona": _run_daytona, "local": _run_local, "quarantine": _run_quarantine}[mode]
                 result = await asyncio.to_thread(fn, url, sess.get("cdp_url"))
+            except Exception as e:  # a sponsor outage (e.g. Anchor 402) must never crash a case; the verdict just has less evidence
+                result = {"error": f"{type(e).__name__}: {str(e)[:200]}", "final_domain": None}
+                bus.emit("detonation.error", case_id, error=result["error"], mode=mode)
             finally:
                 await _anchor_close(sess.get("id"))
             result["anchor_session"] = sess.get("id")

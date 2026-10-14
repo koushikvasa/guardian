@@ -4,6 +4,7 @@ Live mode talks to SurrealDB over its HTTP /sql endpoint (works with 1.x and 2.x
 Mock mode keeps the same shapes in memory, seeded from data/seed_family.json.
 """
 import json
+import os
 import re
 from pathlib import Path
 
@@ -50,6 +51,10 @@ class Graph:
     # ---------- setup ----------
     def load_seed(self, path: Path = SEED):
         fam = json.loads(path.read_text(encoding="utf-8"))
+        for m in fam["members"]:  # real demo phones come from env (FAMILY_PHONE_ROSA=...), never from the committed seed
+            real = os.environ.get(f"FAMILY_PHONE_{m['id'].upper()}", "").strip()
+            if real:
+                m["phone"] = real
         if self.live:
             self.sql(SCHEMA.read_text(encoding="utf-8"))
             self.sql("DELETE person; DELETE family; DELETE member_of;")
