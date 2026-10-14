@@ -1,13 +1,16 @@
 import os, sys, asyncio
-os.environ["GUARDIAN_MOCK"] = "0"
-os.environ["ANCHOR_API_KEY"] = "sk-bogus"
-os.environ["DAYTONA_API_KEY"] = ""
-os.environ["DETONATE_MODE"] = "local"
+os.environ["GUARDIAN_MOCK"] = "1"
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from app import detonate, bus
+from app import bus, config, detonate
 
 
 def test_anchor_failure_does_not_crash_the_case(monkeypatch):
+    # config is read at import time, so patch its attributes rather than the environment
+    monkeypatch.setattr(config, "FORCE_MOCK", False)
+    monkeypatch.setattr(config, "ANCHOR_API_KEY", "sk-bogus")
+    monkeypatch.setattr(config, "DAYTONA_API_KEY", "")
+    monkeypatch.setattr(config, "DETONATE_MODE", "local")
+
     async def boom():
         raise RuntimeError("402 Payment Required")
     monkeypatch.setattr(detonate, "_anchor_session", boom)
