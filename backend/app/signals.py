@@ -26,7 +26,7 @@ METHODS = {
     "bitcoin_atm": r"bitcoin atm|cajero de bitcoin",
 }
 REMOTE_ACCESS = r"(?:\b(anydesk|teamviewer|ultraviewer|logmein|quick ?assist|remote (?:access|control|desktop)|access (?:to )?(?:my|your) (?:computer|pc|laptop|phone)|share (?:my|your) screen|install (?:this|an?) (?:app|program|software)|acceso remoto|controlar (?:mi|su) computadora|instale (?:esta|una) aplicaci[oó]n)\b|రిమోట్|ఇన్‌స్టాల్ చేయ|స్క్రీన్ షేర్)"
-TECH_SUPPORT = r"(?:\b(virus|infected|hacked|malware|security alert|license (?:has )?expired|tech(?:nical)? support|refund department|refund of \$?[\d,]+|overcharged|your (?:computer|pc|account) (?:has been|is) (?:compromised|suspended|locked)|do not turn off|soporte t[eé]cnico|tiene un virus|reembolso)\b|వైరస్|హ్యాక్|కంప్యూటర్‌లో సమస్య|రీఫండ్)"
+TECH_SUPPORT = r"(?:\b(virus|infected|hacked|malware|security alert|license (?:has )?expired|tech(?:nical)? support|refund department|refund of \$?[\d,]+|overcharged|your (?:computer|pc|laptop) (?:has been|is) (?:compromised|infected|locked)|do not turn off|soporte t[eé]cnico|tiene un virus|reembolso)\b|వైరస్|హ్యాక్|కంప్యూటర్‌లో సమస్య|రీఫండ్)"
 CALLBACK_RE = re.compile(r"(?:\+?1[\s.-]?)?\(?\b[2-9]\d{2}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b")
 BRANDS = {
     "Microsoft": r"microsoft|windows (?:defender|security|support)",

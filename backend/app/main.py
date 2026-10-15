@@ -128,9 +128,35 @@ async def ingest(payload: dict, bg: BackgroundTasks):
     if is_family:  # family texting Rosa: never inspected
         return {"ok": True, "skipped": "family"}
     rosa = graph.by_role("protected")[0]
-    bus.emit("sms.in", None, frm=sender, body=text, via="auto")
-    bg.add_task(pipeline.handle_message, payload.get("phone") or rosa["phone"], text, sender or None, None, True)
-    return {"ok": True}
+    await queue_ingest(payload.get("phone") or rosa["phone"], sender, text)
+    return {"ok": True, "merging_for_s": config.INGEST_MERGE_S}
+
+
+_pending: dict[tuple[str, str], dict] = {}
+
+
+async def queue_ingest(phone: str, sender: str, text: str):
+    """Carriers split a long SMS into several notifications. Collect fragments from the same sender for
+    INGEST_MERGE_S seconds, then open ONE case with the joined text."""
+    key = (phone, sender)
+    slot = _pending.get(key)
+    if slot:
+        slot["texts"].append(text)
+        slot["task"].cancel()
+    else:
+        slot = _pending[key] = {"texts": [text]}
+
+    async def flush():
+        try:
+            await asyncio.sleep(config.INGEST_MERGE_S)
+        except asyncio.CancelledError:
+            return
+        _pending.pop(key, None)
+        body = " ".join(t.strip() for t in slot["texts"] if t and t.strip())
+        bus.emit("sms.in", None, frm=sender, body=body, via="auto", fragments=len(slot["texts"]))
+        await pipeline.handle_message(phone, body, sender or None, None, True)
+
+    slot["task"] = asyncio.create_task(flush())
 
 
 @app.get("/events")
