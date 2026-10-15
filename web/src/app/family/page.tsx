@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Brand } from "@/components/Mark";
+import { MemoryGraph } from "@/components/MemoryGraph";
 import { API, CaseState, LANG_NAME, useGuardian } from "@/lib/guardian";
 
 const PROTECTED_NAME: Record<string, string> = { jasmine: "Jasmine", amma: "Amma", rosa: "Rosa" };
@@ -91,6 +92,15 @@ export default function FamilyPage() {
           </div>
           <div style={{ fontSize: 14, color: "var(--muted)" }}>Any request above this is locked until Daniel turns the key. Guardian itself never approves, and there is no timeout.</div>
         </div>
+      </section>
+
+      {/* what Guardian knows, as a graph */}
+      <section className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>What Guardian knows</div>
+          <div style={{ fontSize: 14, color: "var(--muted)" }}>Hover a node. The family in the middle, what Guardian has seen and judged on the next ring, the scam knowledge it was given on the outside.</div>
+        </div>
+        <MemoryGraph />
       </section>
 
       {/* today + memory */}

@@ -79,14 +79,14 @@ class Memory:
             return {"ok": True, "entities": entities}
 
     # ---------- recall ----------
-    def recall(self, query: str, case_id: str | None = None, limit: int = 5) -> dict:
+    def recall(self, query: str, case_id: str | None = None, limit: int = 5, scopes: list[str] | None = None) -> dict:
         """Returns {hits: [{text, when, score}], trace_id, tier}. Never raises."""
         with span("memory.recall", case=case_id or "") as s:
             out: dict = {"hits": [], "trace_id": None, "tier": None}
             if self.live:
                 try:
                     r = httpx.post(self._base() + "/query", headers=self._h(), timeout=config.MEMORY_RECALL_TIMEOUT_S + 2,
-                                   json={"query": query[:600], "lens": [self.scope, KNOWLEDGE_SCOPE]})
+                                   json={"query": query[:600], "lens": scopes or [self.scope, KNOWLEDGE_SCOPE]})
                     r.raise_for_status()
                     d = r.json()
                     out["tier"] = d.get("tier")
@@ -102,6 +102,8 @@ class Memory:
                 qt = _tokens(query)
                 scored = []
                 for m in self.mem:
+                    if scopes and ((KNOWLEDGE_SCOPE in scopes) != m["text"].startswith(KNOWLEDGE_TAG)):
+                        continue
                     ov = len(qt & _tokens(m["text"]))
                     if ov >= 2:
                         scored.append((ov / max(1, len(qt)), m))

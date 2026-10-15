@@ -9,6 +9,7 @@
   GET  /help/{id}              the help voice note as a shareable page
   GET  /family, POST /family   the family page (phones masked; POST edits phrases, languages, threshold only)
   GET  /memory?q=              what Guardian remembers, with the retrieval trace
+  GET  /memory/graph           the same as nodes and edges for the family page
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
   POST /demo/{link|family|money|support}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
   GET  /health                 which sponsors are live vs mock
@@ -254,6 +255,83 @@ async def patch_family(payload: dict):
     p.write_text(json.dumps(seed, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     graph.load_seed(p)
     return {"ok": True}
+
+
+_graph_cache: dict = {"at": 0.0, "value": None}
+
+
+@app.get("/memory/graph")
+async def memory_graph(fresh: int = 0):
+    """What Guardian knows, as nodes and edges: the family, the threats it remembered, and the scam knowledge it was given.
+    Two memory recalls take a while, so the result is cached for a minute (fresh=1 forces a rebuild)."""
+    import re as _re
+    import time as _time
+
+    if not fresh and _graph_cache["value"] and _time.time() - _graph_cache["at"] < 60:
+        return _graph_cache["value"]
+
+    fam = graph.family()
+    nodes: dict[str, dict] = {}
+    edges: list[dict] = []
+
+    def node(nid, label, kind, **kw):
+        if nid not in nodes:
+            nodes[nid] = {"id": nid, "label": label, "kind": kind, **kw}
+        return nid
+
+    members = {}
+    for m in fam["members"]:
+        mid = str(m.get("id", "")).split(":")[-1]
+        members[(m.get("name") or "").lower()] = mid
+        node(mid, m.get("name") or mid, "guardian" if m.get("role") == "guardian" else "member", detail=f"{m.get('name')} · {m.get('role')} · {m.get('lang')}")
+
+    # remembered verdicts (family scope) + knowledge (shared scope), in one recall
+    from .memory import KNOWLEDGE_SCOPE
+
+    seen = await asyncio.to_thread(memory.recall, "forwarded a link, a text claiming to be a relative, asking for money, judged a scam", None, 20, [memory.scope])
+    known = await asyncio.to_thread(memory.recall, "scam knowledge: Microsoft, Amazon, gift cards, wire, bail, bank links, Social Security, IRS, USPS, Netflix", None, 20, [KNOWLEDGE_SCOPE])
+    rec = {"hits": seen.get("hits", []) + known.get("hits", []), "trace_id": seen.get("trace_id"), "tier": seen.get("tier")}
+    brands = {"Microsoft": r"microsoft|anydesk|teamviewer", "Amazon": r"amazon", "Keystone Bank": r"keystone", "Social Security": r"social security|medicare", "IRS": r"\birs\b", "USPS": r"\busps\b|fedex|ups\b", "Netflix": r"netflix|netflx", "Gift cards": r"gift card", "Wire / crypto": r"wire transfer|zelle|crypto|bitcoin", "Bail / grandparent": r"bail|grandparent|jail"}
+    for h in rec.get("hits", []):
+        t = h["text"]
+        if h.get("kind") == "knowledge":
+            for b, pat in brands.items():
+                if _re.search(pat, t, _re.I):
+                    node("k:" + b, b, "knowledge", detail=t[:220])
+            continue
+        who = _re.match(r"On (\d{4}-\d{2}-\d{2}), (\w+) forwarded", t)
+        when, name = (who.group(1), who.group(2)) if who else ("", "")
+        mid = members.get(name.lower())
+        if not mid:
+            continue
+        dom = _re.search(r"a link to ([a-z0-9.-]+\.[a-z]{2,})", t, _re.I)
+        claim = _re.search(r"claiming to be (\w+)", t)
+        sender = _re.search(r"number ending (\d{4})", t)
+        method = _re.search(r"money by (\w+)", t)
+        targets = []
+        if dom:
+            targets.append(node("d:" + dom.group(1).lower(), dom.group(1).lower(), "domain", scam=True, detail=t[:220], when=when))
+        if claim:
+            targets.append(node("s:" + claim.group(1).lower(), f"“it’s {claim.group(1)}”", "story", scam=True, detail=t[:220], when=when))
+        if sender:
+            targets.append(node("n:" + sender.group(1), f"…{sender.group(1)}", "sender", scam=True, detail=t[:220], when=when))
+        for tid in targets:
+            edges.append({"from": tid, "to": mid, "label": "sent to", "scam": True})
+        if claim and members.get(claim.group(1).lower()):
+            edges.append({"from": "s:" + claim.group(1).lower(), "to": members[claim.group(1).lower()], "label": "impersonated", "scam": True})
+        if method and claim:
+            node("k:Wire / crypto", "Wire / crypto", "knowledge", detail="Payments that cannot be reversed")
+            edges.append({"from": "s:" + claim.group(1).lower(), "to": "k:Wire / crypto", "label": method.group(1), "scam": False})
+    # link seen domains to the brand knowledge they imitate
+    for nid, n in list(nodes.items()):
+        if n["kind"] == "domain":
+            for b, pat in brands.items():
+                if _re.search(pat.split("|")[0], n["label"], _re.I) and "k:" + b in nodes:
+                    edges.append({"from": nid, "to": "k:" + b, "label": "imitates", "scam": False})
+    uniq = {(e["from"], e["to"], e.get("label")): e for e in edges}
+    _graph_cache["value"] = {"nodes": list(nodes.values()), "edges": list(uniq.values()), "trace_id": rec.get("trace_id"), "tier": rec.get("tier")}
+    _graph_cache["at"] = _time.time()
+    return _graph_cache["value"]
 
 
 @app.get("/memory")
