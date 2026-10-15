@@ -35,6 +35,17 @@ Run the smoke tests in risk order:
 
 ElevenLabs agent prompts are in `agents/`. Each one lists its first message, system prompt and data-collection fields.
 
+## Demo day
+
+```
+cd backend ; .\.venv\Scripts\python.exe run.py morning 55     # tunnel, URLs, Twilio webhook, text budget; paste the 2 URLs it prints
+cd backend ; .\.venv\Scripts\python.exe run.py dev            # second window
+cd web ; npm run dev                                          # third window
+```
+Stage: http://localhost:3000/stage. DEMO plays every beat with sponsors mocked; the LIVE switch (two clicks) makes beats real.
+AWS lab account: put AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN and BEDROCK_MODEL_ID in .env.local, then `run.py check bedrock`.
+Anchor credit: nothing to configure; `run.py check anchor https://<tunnel>/mock/keystone/` then the stage shows screenshots and the live view.
+
 ## Map
 
 ```

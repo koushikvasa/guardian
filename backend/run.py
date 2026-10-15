@@ -9,6 +9,7 @@
   python run.py eval            offline eval -> data/scoreboard.json
   python run.py check <name>    smoke test: elevenlabs | daytona | anchor | surreal | phoenix | bedrock
   python run.py seed-memory     load data/memory_knowledge.jsonl into SurrealDB Agent Memory (add --force to reload)
+  python run.py morning [N]     demo-day start: tunnel + URLs + Twilio webhook + text budget N (default 55)
 """
 import json
 import os
@@ -60,6 +61,8 @@ def main(argv):
         sys.exit(subprocess.call([PY, "-m", "pytest", "-q", "tests"]))
     elif cmd == "eval":
         sys.exit(subprocess.call([PY, "evals/run_eval.py"]))
+    elif cmd == "morning":
+        sys.exit(subprocess.call([PY, "scripts/morning.py", *rest]))
     elif cmd == "seed-memory":
         sys.path.insert(0, ".")
         from app.memory import memory
