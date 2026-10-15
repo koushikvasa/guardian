@@ -4,6 +4,7 @@ import { Brand, Mark } from "@/components/Mark";
 import { Desk, mainCall } from "@/components/Desk";
 import { PhoneAmma } from "@/components/PhoneAmma";
 import { PhoneDaniel } from "@/components/PhoneDaniel";
+import { TraceDrawer } from "@/components/TraceDrawer";
 import { API, Beat, CaseState, fireDemo, GEvent, Lang, LANG_NAME, useGuardian, useHealth } from "@/lib/guardian";
 
 const DEFAULT_NAME: Record<Lang, string> = { en: "Jasmine", te: "Amma", es: "Rosa" };
@@ -36,6 +37,7 @@ export default function Stage() {
   const [sel, setSel] = useState<string | null>(null);
   const [dry, setDry] = useState(true);
   const [panel, setPanel] = useState(false);
+  const [trace, setTrace] = useState(false);
   const [fit, setFit] = useState({ scale: 1, left: 0, top: 0, h: CANVAS_H });
   const [members, setMembers] = useState<FamMember[]>([]);
   useEffect(() => {
@@ -79,7 +81,8 @@ export default function Stage() {
       if (e.key.toLowerCase() === "l") pickLang(lang === "en" ? "te" : lang === "te" ? "es" : "en");
       if (e.key.toLowerCase() === "r") toggleDry();
       if (e.key.toLowerCase() === "p") setPanel((v) => !v);
-      if (e.key === "Escape") setPanel(false);
+      if (e.key.toLowerCase() === "t") setTrace((v) => !v);
+      if (e.key === "Escape") { setPanel(false); setTrace(false); }
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, [fire, lang]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -176,7 +179,7 @@ export default function Stage() {
       {/* desk */}
       <div ref={desk} style={{ minWidth: 0, minHeight: 0 }}>
         {c ? (
-          <Desk c={c} who={who} lookAt={lookAt} />
+          <Desk c={c} who={who} lookAt={lookAt} onTrace={() => setTrace(true)} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 760 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}><Mark size={96} mood="idle" /><div className="serif" style={{ fontSize: 26 }}>Watching. Nothing to do.</div></div>
@@ -210,8 +213,10 @@ export default function Stage() {
           <span style={{ width: 4 }} />
           {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff", fontSize: 14 }}>▶ {b.label}</button>)}
           {texts && texts.budget != null && <span className="pill" style={{ background: "#F3F4F8", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
+          {c && <button className="pill" onClick={() => setTrace((v) => !v)} title="T: trace" style={{ cursor: "pointer", border: "1px solid var(--line)", background: trace ? "var(--ink)" : "#fff", color: trace ? "#fff" : "var(--ink)", fontSize: 14 }}>T · trace</button>}
         </div>
       </div>
+      {trace && c && <TraceDrawer c={c} onClose={() => setTrace(false)} />}
     </div>
     </main>
   );

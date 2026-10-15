@@ -4,10 +4,18 @@ Arize AX (cloud) when ARIZE_SPACE_ID + ARIZE_API_KEY are set; otherwise self-hos
 PHOENIX_COLLECTOR_ENDPOINT is set. With neither, span() is a no-op so nothing else changes.
 """
 import contextlib
+import contextvars
+import time
 
-from . import config
+from . import bus, config
 
 _tracer = None
+current_case: contextvars.ContextVar[str | None] = contextvars.ContextVar("guardian_case", default=None)
+
+
+def set_case(case_id: str | None):
+    """Spans opened inside this task (and threads it spawns) are tagged with the case."""
+    current_case.set(case_id)
 
 
 def init():
@@ -61,6 +69,13 @@ class _Span:
         self.real = real
         self.attrs: dict = {}
 
+    @property
+    def trace_id(self) -> str | None:
+        try:
+            return format(self.real.get_span_context().trace_id, "032x") if self.real is not None else None
+        except Exception:
+            return None
+
     def set(self, key: str, value):
         self.attrs[key] = value
         if self.real is not None:
@@ -69,16 +84,31 @@ class _Span:
             self.real.set_attribute(key, value)
 
 
+def _emit(name: str, s: "_Span", t0: float, attrs: dict):
+    case_id = str(attrs.get("case") or current_case.get() or "") or None
+    if name == "case" and not case_id:
+        return
+    public = {k: (v if isinstance(v, (int, float, bool)) else str(v)[:160]) for k, v in s.attrs.items() if k not in ("case", "signals", "data", "url")}
+    bus.emit("span", case_id, name=name, t0=round(t0, 3), dur=round(time.time() - t0, 3), attrs=public)
+
+
 @contextlib.contextmanager
 def span(name: str, **attrs):
+    t0 = time.time()
     if _tracer is None:
         s = _Span()
         for k, v in attrs.items():
             s.set(k, v)
-        yield s
+        try:
+            yield s
+        finally:
+            _emit(name, s, t0, attrs)
         return
     with _tracer.start_as_current_span(name) as real:
         s = _Span(real)
         for k, v in attrs.items():
             s.set(k, v)
-        yield s
+        try:
+            yield s
+        finally:
+            _emit(name, s, t0, attrs)

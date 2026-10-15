@@ -13,6 +13,9 @@ export type CaseState = {
   protected?: string;
   sender?: string | null;
   quiet?: boolean;
+  traceId?: string | null;
+  openedAt?: number;
+  spans?: { name: string; t0: number; dur: number; attrs: Record<string, unknown> }[];
   status: "open" | "closed";
   verdict?: { score: number; label: "safe" | "suspicious" | "scam"; reasons: string[]; fired: Fired[] };
   detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string; browser?: string };
@@ -42,7 +45,8 @@ function reduce(s: State, e: GEvent | { kind: "__conn"; ok: boolean }): State {
   const prev: CaseState = s.cases[id] || { id, status: "open", calls: {} };
   const c: CaseState = { ...prev, calls: { ...prev.calls } };
   const k = ev.kind;
-  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; c.protected = ev.protected as string; c.sender = (ev.sender as string | null) ?? null; c.quiet = !!ev.quiet; }
+  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; c.protected = ev.protected as string; c.sender = (ev.sender as string | null) ?? null; c.quiet = !!ev.quiet; c.traceId = (ev.trace_id as string | null) ?? null; c.openedAt = ev.t; }
+  else if (k === "span") c.spans = [...(prev.spans || []), { name: ev.name as string, t0: ev.t0 as number, dur: ev.dur as number, attrs: (ev.attrs as Record<string, unknown>) || {} }];
   else if (k === "verdict") c.verdict = ev as unknown as CaseState["verdict"];
   else if (k === "detonation.live") c.liveView = (ev.live_view_url as string) || null;
   else if (k === "detonation.result") c.detonation = ev as CaseState["detonation"];

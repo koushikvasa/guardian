@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Brand } from "@/components/Mark";
 import { MemoryGraph } from "@/components/MemoryGraph";
+import { TraceDrawer } from "@/components/TraceDrawer";
 import { API, CaseState, LANG_NAME, useGuardian } from "@/lib/guardian";
 
 const PROTECTED_NAME: Record<string, string> = { jasmine: "Jasmine", amma: "Amma", rosa: "Rosa" };
@@ -26,6 +27,7 @@ export default function FamilyPage() {
   useEffect(() => { ask(q); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   const patch = async (body: object, key: string) => { setSaving(key); await fetch(`${API}/family`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); await load(); setSaving(null); setSaved(key); setTimeout(() => setSaved((k) => (k === key ? null : k)), 4000); };
   const [past, setPast] = useState<CaseState[]>([]);
+  const [traceFor, setTraceFor] = useState<CaseState | null>(null);
   useEffect(() => { fetch(`${API}/cases`).then((r) => r.json()).then((cs: CaseState[]) => setPast(cs.map((c) => ({ ...c, protected: PROTECTED_NAME[c.protected || ""] || c.protected, calls: c.calls || {} })))).catch(() => {}); }, [g.order.length]);
   const liveIds = new Set(g.order);
   const cases = [...g.order.slice().reverse().map((id) => g.cases[id]), ...past.filter((c) => !liveIds.has(c.id)).reverse()];
@@ -109,7 +111,7 @@ export default function FamilyPage() {
           <div style={{ fontWeight: 700 }}>Today</div>
           {cases.length === 0 && <div style={{ color: "var(--muted)", fontSize: 15 }}>No cases yet. They appear here as they happen.</div>}
           {cases.slice(0, 8).map((c) => (
-            <div key={c.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", fontSize: 15, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
+            <div key={c.id} onClick={() => setTraceFor(c)} title="Open the trace" style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", fontSize: 15, borderTop: "1px solid var(--line)", paddingTop: 8, cursor: "pointer" }}>
               <span className="pill" style={{ background: c.verdict?.label === "scam" ? "#FCE4E2" : c.verdict?.label === "suspicious" ? "#FFF3D6" : "#DDF3EA", color: c.verdict?.label === "scam" ? "#8C1D18" : c.verdict?.label === "suspicious" ? "#6B4A10" : "var(--ok)" }}>{c.verdict?.label || "checking"}</span>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><b>{c.protected}</b> · {c.text}</span>
               <span style={{ color: "var(--muted)", fontSize: 13 }}>{c.money ? `$${c.money.amount.toLocaleString()} ${c.money.state}` : c.timeToCall != null ? `call in ${c.timeToCall}s` : ""}</span>
@@ -132,6 +134,7 @@ export default function FamilyPage() {
           {mem && <div style={{ fontSize: 12, color: "var(--muted)" }}>SurrealDB Agent Memory · {mem.tier || "mock"}{mem.trace_id ? ` · trace ${mem.trace_id}` : ""}</div>}
         </div>
       </section>
+      {traceFor && <TraceDrawer c={traceFor} onClose={() => setTraceFor(null)} modal />}
     </main>
   );
 }

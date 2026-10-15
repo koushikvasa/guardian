@@ -58,7 +58,8 @@ mock_sites/keystone  the ONLY page ever detonated on stage (fictional bank, form
 `money.locked` · `key.decision` · `call.{warning|verify|second_key}.{dialing|connected|transcript|ended}` ·
 `verify.outcome` · `teachback` · `help.note.ready` · `herd.recorded` · `eval.live` · `case.closed` ·
 `memory.recalled` `{hits:[{text,when,score}], trace_id, tier, prior_scam:{what,date}|null}` · `memory.remembered` `{text, entities}` ·
-`help.note.ready` also carries `link` (the public `GET /help/{id}` page served by the backend)
+`help.note.ready` also carries `link` (the public `GET /help/{id}` page served by the backend) ·
+`span` `{name, t0, dur, attrs}` for every traced step (the same spans exported to Arize) · `case.opened` carries `trace_id`
 
 Every event is also appended to `data/events.log.jsonl`. That file is the stage backup: replay it into the UI if the network dies.
 

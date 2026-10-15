@@ -24,7 +24,7 @@ from .i18n import t
 from .memory import memory
 from .scrub import scrub
 from .signals import detect_lang, embed, extract
-from .tracing import span
+from .tracing import set_case, span
 
 cases: dict[str, dict] = {}
 _key_waiters: dict[str, asyncio.Future] = {}
@@ -66,10 +66,12 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
     case = {"id": case_id, "protected": protected["id"], "lang": lang, "status": "open", "quiet": quiet,
             "opened_at": time.time(), "text": scrub(body), "outbound": []}
     cases[case_id] = case
+    set_case(case_id)
 
     with span("case", case=case_id, lang=lang) as root:
+        case["trace_id"] = root.trace_id
         masked = (f"a number ending {original_sender[-4:]}" if original_sender and len(original_sender) >= 4 else None)
-        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet, sender=masked)
+        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet, sender=masked, trace_id=root.trace_id)
         if not quiet:
             await _sms(case, protected["phone"], t("ack", lang), key="ack")
 
@@ -107,7 +109,10 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
         if similar:
             herd += len(similar)
             bus.emit("herd.similar", case_id, matches=[{"case": str(m["id"]), "sim": round(m["sim"], 2)} for m in similar])
-        v = rules.evaluate(signals, sender, det, herd, lang, memory=prior)
+        with span("rules.evaluate", case=case_id) as rs:
+            v = rules.evaluate(signals, sender, det, herd, lang, memory=prior)
+            rs.set("label", v.label)
+            rs.set("score", v.score)
         case["verdict"] = {"score": v.score, "label": v.label, "critical": v.critical, "fired": v.fired, "reasons": v.reasons(), "herd": herd}
         bus.emit("verdict", case_id, **case["verdict"])
         root.set("verdict", v.label)
@@ -125,7 +130,8 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
             await text_verdict(case, protected, v)
 
         if case["verdict"]["label"] == "scam":
-            await asyncio.to_thread(graph.record_case, {k: case[k] for k in ("id", "protected", "lang", "text", "verdict")}, fps)
+            with span("herd.record", case=case_id):
+                await asyncio.to_thread(graph.record_case, {k: case[k] for k in ("id", "protected", "lang", "text", "verdict")}, fps)
             await asyncio.to_thread(graph.store_scam_text, case_id, case["text"], vec)
             bus.emit("herd.recorded", case_id, fingerprints=len(fps))
             await asyncio.to_thread(memory.remember_verdict, case, det, original_sender, protected["name"])
@@ -312,7 +318,8 @@ async def help_note(case, protected):
     lang = case["lang"]
     money = case.get("money", {}).get("amount")
     steps = _story_steps(case, lang, money)
-    audio = await _tts(" ".join(steps), case["id"], lang)
+    with span("tts.help_note", case=case["id"], lang=lang):
+        audio = await _tts(" ".join(steps), case["id"], lang)
     link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/help/{case['id']}"
     case["help"] = {"title": _help_title(lang, money), "steps": steps, "audio_url": audio, "name": protected["name"]}
     bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=case["help"]["title"], link=link)

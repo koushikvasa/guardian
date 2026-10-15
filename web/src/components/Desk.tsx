@@ -64,7 +64,7 @@ export function steps(c: CaseState): Step[] {
   return s;
 }
 
-export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string; lookAt: Look }) {
+export function Desk({ c, who, lookAt, onTrace }: { c: CaseState | undefined; who: string; lookAt: Look; onTrace?: () => void }) {
   const mood = moodFor(c);
   const say = narration(c, who);
   const [stampOn, setStampOn] = useState(false);
@@ -87,7 +87,7 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
         <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 290px) 1fr", gap: 18, minHeight: 0 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 0, overflow: "hidden" }}>
             {list.map((s) => (
-              <div key={s.key} className={`step ${s.state}`}>
+              <div key={s.key} className={`step ${s.state}`} onClick={s.key === "rem" && onTrace ? onTrace : undefined} style={s.key === "rem" && onTrace ? { cursor: "pointer" } : undefined} title={s.key === "rem" && onTrace ? "Open the trace (T)" : undefined}>
                 <span className="dot" />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>{s.title}</div>
