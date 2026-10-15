@@ -33,14 +33,14 @@ export default function Stage() {
   const health = useHealth();
   const [lang, setLang] = useState<Lang>("en");
   const [sel, setSel] = useState<string | null>(null);
-  const [dry, setDry] = useState(false);
+  const [dry, setDry] = useState(true);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
   const c = (sel && g.cases[sel]) || g.latest;
   const who = c?.protected || PROTECTED[lang];
   const stage = useRef<HTMLDivElement>(null), pA = useRef<HTMLDivElement>(null), pD = useRef<HTMLDivElement>(null), desk = useRef<HTMLDivElement>(null), fly = useRef<HTMLDivElement>(null);
   const showD = needsDaniel(c);
 
-  useEffect(() => { try { setDry(localStorage.getItem("guardian.dry") === "1"); } catch {} }, []);
+  useEffect(() => { try { setDry(localStorage.getItem("guardian.dry") !== "0"); } catch {} }, []);
   const toggleDry = () => { setDry((d) => { try { localStorage.setItem("guardian.dry", d ? "0" : "1"); } catch {} return !d; }); };
   useEffect(() => { setSel(null); }, [g.order.length]);
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function Stage() {
           ))}
           <span style={{ width: 6 }} />
           {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
-          <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#FFF3D6" : "#fff", color: dry ? "#6B4A10" : "var(--muted)" }}>{dry ? "rehearsal" : "live beats"}</button>
+          <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal · no texts or calls" : "LIVE · texts and calls"}</button>
           <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "reconnecting"}</span>
         </div>
       </div>
