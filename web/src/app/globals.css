@@ -61,7 +61,7 @@ a { color: var(--accent); }
 .keypane { position: absolute; inset: 0; background: var(--bg); color: var(--fg); padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; transform: translateY(100%); transition: transform .5s cubic-bezier(.2,.8,.2,1) } .keypane.show { transform: none }
 .fly { position: absolute; z-index: 5; padding: 8px 12px; border-radius: 14px; background: var(--accent); color: #fff; font-size: 13px; max-width: 240px; pointer-events: none; opacity: 0; transition: left .8s cubic-bezier(.2,.8,.2,1), top .8s cubic-bezier(.2,.8,.2,1), opacity .25s, transform .8s; overflow-wrap: anywhere }
 .fly.in { background: var(--bg); color: var(--fg); border: 1px solid var(--line) }
-.sp .pill { color: var(--muted); font-size: 14px; white-space: nowrap; flex-shrink: 0 } .sp .pill.lit { background: var(--ok-soft); color: var(--ok) }
+.sp .pill { color: var(--muted); font-size: 13px; padding: 3px 9px; white-space: nowrap; flex-shrink: 0 } .sp .pill.lit { background: var(--ok-soft); color: var(--ok) }
 .col { transition: opacity .4s, transform .4s } .col.hide { opacity: 0; transform: translateX(30px); pointer-events: none }
 @media (prefers-reduced-motion: reduce) { .msg, .callover, .keypane, .stamp, .reason, .fly, .sand .pg, .col { transition: none; animation: none } .wave i { animation: none } }
 .heroCell { container-type: size } @container (max-height: 190px) { .heroCell > svg { display: none } }
