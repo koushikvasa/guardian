@@ -35,7 +35,7 @@ export const PhoneAmma = forwardRef<HTMLDivElement, { c: CaseState | undefined; 
 
   return (
     <div className="phone2" ref={ref} lang={lang}>
-      <div className="bar"><Mark size={36} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>{who}&rsquo;s phone</small></div></div>
+      <div className="bar"><Mark size={40} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>{who}&rsquo;s phone</small></div></div>
       <div className="thread" ref={thread} onScroll={onScroll}>
         {c?.text && <div className="msg in"><span className="k">{c.sender || "Unknown number"}</span>{c.text}</div>}
         {mine.map((m, i) => (

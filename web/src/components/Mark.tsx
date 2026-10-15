@@ -61,7 +61,7 @@ export function Mark({ size = 92, mood = "idle", look = null, tilt = true, title
 
   return (
     <div ref={root} style={{ width: size, flexShrink: 0, transformStyle: "preserve-3d", transition: "transform .2s", filter: "drop-shadow(0 8px 12px rgba(22,27,51,.18))" }} aria-hidden={title ? undefined : true} role={title ? "img" : undefined} aria-label={title}>
-      <svg viewBox="0 0 48 30" style={{ width: "100%", height: "auto", display: "block", overflow: "visible" }}>
+      <svg viewBox="6 9 36 22" style={{ width: "100%", height: "auto", display: "block", overflow: "visible" }}>
         <defs>
           <linearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".28" /><stop offset=".5" stopColor="#fff" stopOpacity="0" /></linearGradient>
           <clipPath id={`${id}L`}><path d="M15.59 16.5 H21.91 A5.5 5.5 0 0 1 21.91 25.5 H15.59 A5.5 5.5 0 0 1 15.59 16.5 Z" /></clipPath>
@@ -80,4 +80,16 @@ export function Mark({ size = 92, mood = "idle", look = null, tilt = true, title
       </svg>
     </div>
   );
+}
+
+
+/** The brand lockup: a larger mark, vertically centred on the wordmark. */
+export function Brand({ size = 56, mood = "idle", href }: { size?: number; mood?: Mood; href?: string }) {
+  const inner = (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: Math.round(size * 0.22), fontWeight: 700, fontSize: Math.round(size * 0.46), lineHeight: 1, color: "inherit" }}>
+      <Mark size={size} mood={mood} tilt={false} />
+      <span style={{ transform: "translateY(1px)" }}>Guardian</span>
+    </span>
+  );
+  return href ? <a href={href} style={{ textDecoration: "none", color: "inherit" }}>{inner}</a> : inner;
 }

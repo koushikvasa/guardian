@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mark } from "@/components/Mark";
+import { Brand, Mark } from "@/components/Mark";
 import { Desk, mainCall } from "@/components/Desk";
 import { PhoneAmma } from "@/components/PhoneAmma";
 import { PhoneDaniel } from "@/components/PhoneDaniel";
@@ -124,7 +124,7 @@ export default function Stage() {
     <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: fit.h, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "320px 1fr 320px" : "320px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
       {/* top bar: what the room should see */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18, background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Mark size={40} tilt={false} /> Guardian</button>
+        <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Brand size={56} /></button>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{c.id} · {c.protected} · {LANG_NAME[c.lang || "en"]}</span>}
           {!c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[lang]} · {LANG_NAME[lang]}</span>}

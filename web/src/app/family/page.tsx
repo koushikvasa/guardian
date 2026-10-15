@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Mark } from "@/components/Mark";
+import { Brand } from "@/components/Mark";
 import { API, CaseState, LANG_NAME, useGuardian } from "@/lib/guardian";
 
 const PROTECTED_NAME: Record<string, string> = { jasmine: "Jasmine", amma: "Amma", rosa: "Rosa" };
@@ -33,7 +33,7 @@ export default function FamilyPage() {
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 64px", display: "flex", flexDirection: "column", gap: 28 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 20, color: "inherit", textDecoration: "none" }}><Mark size={44} /> Guardian</Link>
+        <Brand size={60} href="/" />
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/stage" className="pill" style={{ background: "var(--ink)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
           <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "offline"}</span>

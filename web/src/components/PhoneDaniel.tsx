@@ -25,7 +25,7 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
 
   return (
     <div className="phone2" ref={ref}>
-      <div className="bar"><Mark size={36} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>Daniel&rsquo;s phone</small></div></div>
+      <div className="bar"><Mark size={40} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>Daniel&rsquo;s phone</small></div></div>
       <div className="thread">
         {mine.length === 0 && <div className="msg g" style={{ opacity: 0.6 }}><span className="k">Guardian</span>Nothing needs you.</div>}
         {mine.map((m, i) => <div key={i} className="msg g alert" style={m.delivered === false ? { opacity: 0.55 } : undefined}><span className="k">Guardian</span>{String(m.body ?? "").replace(/^Guardian: /, "")}</div>)}

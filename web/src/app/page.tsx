@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Mark } from "@/components/Mark";
+import { Brand, Mark } from "@/components/Mark";
 import { Hero } from "@/components/Hero";
 import { CaseState, useHealth } from "@/lib/guardian";
 
@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 72px", display: "flex", flexDirection: "column", gap: 44 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 20 }}><Mark size={46} /> Guardian</div>
+        <Brand size={60} />
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/family" className="pill" style={{ background: "#fff", border: "1px solid var(--line)", textDecoration: "none", color: "inherit" }}>Family</Link>
           <Link href="/stage" className="pill" style={{ background: "var(--ink)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
