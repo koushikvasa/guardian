@@ -55,6 +55,9 @@ class Graph:
             real = os.environ.get(f"FAMILY_PHONE_{m['id'].upper()}", "").strip()
             if real:
                 m["phone"] = real
+            wa = os.environ.get(f"FAMILY_WHATSAPP_{m['id'].upper()}", "").strip()  # WhatsApp may live on a different number than calls
+            if wa:
+                m["whatsapp"] = norm_phone(wa)
         if self.live:
             self.sql(SCHEMA.read_text(encoding="utf-8"))
             self.sql("DELETE person; DELETE family; DELETE member_of;")
@@ -80,8 +83,15 @@ class Graph:
     def people_by_phone(self, phone: str) -> list[dict]:
         """Several members may share one phone (one-phone rehearsals); protected members first."""
         p = norm_phone(phone)
-        hits = [m for m in self.family()["members"] if _key(m["phone"]) == _key(p)]
+        hits = [m for m in self.family()["members"] if _key(p) in (_key(m["phone"]), _key(m.get("whatsapp") or ""))]
         return sorted(hits, key=lambda m: 0 if m.get("role") == "protected" else 1)
+
+    def whatsapp_for(self, phone: str) -> str:
+        """Where to send a WhatsApp message for this member's phone (their WhatsApp number if it differs)."""
+        for m in self.people_by_phone(phone):
+            if m.get("whatsapp"):
+                return m["whatsapp"]
+        return phone
 
     def person_by_phone(self, phone: str) -> dict | None:
         hits = self.people_by_phone(phone)

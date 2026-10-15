@@ -8,6 +8,7 @@ import asyncio
 import httpx
 
 from . import bus, config
+from .graph import graph
 
 
 def _addr(number: str) -> str:
@@ -27,9 +28,10 @@ async def send(case_id: str | None, to: str, body: str, role: str = "protected")
         return
     url = f"https://api.twilio.com/2010-04-01/Accounts/{config.TWILIO_ACCOUNT_SID}/Messages.json"
     frm = _addr(config.TWILIO_WHATSAPP_FROM or config.TWILIO_FROM)
+    dest = graph.whatsapp_for(to) if config.TWILIO_WHATSAPP_FROM else to
     try:
         r = await asyncio.to_thread(
-            httpx.post, url, data={"To": _addr(to), "From": frm, "Body": body},
+            httpx.post, url, data={"To": _addr(dest), "From": frm, "Body": body},
             auth=(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN), timeout=10,
         )
         if r.status_code >= 300:
