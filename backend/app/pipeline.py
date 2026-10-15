@@ -42,8 +42,23 @@ def _fingerprints(signals: dict, det: dict | None, text: str) -> list[str]:
     return fps
 
 
-async def handle_message(from_phone: str, body: str, original_sender: str | None = None) -> dict:
-    protected = graph.person_by_phone(from_phone) or graph.by_role("protected")[0]
+def _phrase(protected: dict) -> str:
+    return protected.get("safe_phrase") or graph.family().get("safe_phrase", "")
+
+
+def _who(from_phone: str, body: str, protected_id: str | None) -> dict:
+    """Which protected member sent this? Explicit id > unique phone > language of the text (shared phone) > first."""
+    if protected_id and graph.person(protected_id):
+        return graph.person(protected_id)
+    cands = [m for m in graph.people_by_phone(from_phone) if m.get("role") == "protected"]
+    if len(cands) > 1:
+        want = detect_lang(body)
+        cands = [m for m in cands if m.get("lang") == want] or cands
+    return cands[0] if cands else graph.by_role("protected")[0]
+
+
+async def handle_message(from_phone: str, body: str, original_sender: str | None = None, protected_id: str | None = None) -> dict:
+    protected = _who(from_phone, body, protected_id)
     lang = protected.get("lang") or detect_lang(body)
     case_id = f"A-{next(_ids)}"
     case = {"id": case_id, "protected": protected["id"], "lang": lang, "status": "open",
@@ -147,7 +162,7 @@ async def verify_by_callback(case, protected, claimed_name):
         res = await calls.place_call(
             "verify", case["id"], who["phone"], config.VERIFY_AGENT_ID,
             {"relative_name": who["name"], "protected_name": protected["name"],
-             "claim_summary": _claim_summary(case), "safe_phrase": graph.family().get("safe_phrase", "")},
+             "claim_summary": _claim_summary(case), "safe_phrase": _phrase(protected)},
             mock_script=[
                 ("agent", f"Hi {who['name']}, this is Guardian calling for your mom, {protected['name']}. Quick check, it'll take 20 seconds."),
                 ("agent", "Someone texting from an unknown number says they're you and need bail money. Did you contact her today?"),
@@ -239,20 +254,29 @@ async def warning_call(case, protected):
         return
     case["warned"] = True
     lang = case["lang"]
-    phrase = graph.family().get("safe_phrase", "")
+    phrase = _phrase(protected)
+    name = protected["name"]
     reasons = case["verdict"]["reasons"][:3]
     _mark_first_call(case)
-    agent = config.WARNING_AGENT_ID_ES if lang == "es" else config.WARNING_AGENT_ID_EN
+    agent = {"es": config.WARNING_AGENT_ID_ES, "en": config.WARNING_AGENT_ID_EN, "te": config.WARNING_AGENT_ID_TE}.get(lang) or config.WARNING_AGENT_ID_EN
     if lang == "es":
-        script = [("agent", f"Rosa, soy Guardian. Su frase de familia es “{phrase}”."),
+        script = [("agent", f"{name}, soy Guardian. Su frase de familia es “{phrase}”."),
                   ("agent", "El mensaje que me envió es una estafa."),
                   ("agent", "No toque el enlace, no conteste y no envíe dinero."),
                   ("agent", "Hizo muy bien en mandármelo. Usted está a salvo."),
                   ("agent", "¿Qué va a hacer si le vuelven a escribir?"),
                   ("user", "Se lo mando a usted primero y no toco nada."),
-                  ("agent", "Exacto. Muy bien, Rosa.")]
+                  ("agent", f"Exacto. Muy bien, {name}.")]
+    elif lang == "te":
+        script = [("agent", f"{name}, నేను Guardian ని. మీ కుటుంబ పదం “{phrase}”."),
+                  ("agent", "మీరు నాకు పంపిన మెసేజ్ మోసం."),
+                  ("agent", "లింక్ నొక్కొద్దు, జవాబు ఇవ్వొద్దు, డబ్బు పంపొద్దు."),
+                  ("agent", "నాకు పంపడం చాలా మంచి పని చేశారు. మీరు సురక్షితంగా ఉన్నారు."),
+                  ("agent", "మళ్ళీ మెసేజ్ వస్తే మీరు ఏం చేస్తారు?"),
+                  ("user", "ముందు మీకు పంపుతాను, ఏదీ నొక్కను."),
+                  ("agent", "సరిగ్గా చెప్పారు. చాలా బాగుంది.")]
     else:
-        script = [("agent", f"Hi, it's Guardian. Your family phrase is “{phrase}”."),
+        script = [("agent", f"{name}, it's Guardian. Your family phrase is “{phrase}”."),
                   ("agent", "The message you sent me is a scam. Don't tap the link, don't reply, don't send money."),
                   ("agent", "You did the right thing sending it to me. You're safe."),
                   ("agent", "What will you do if they text you again?"),
@@ -260,8 +284,8 @@ async def warning_call(case, protected):
                   ("agent", "Exactly. Well done.")]
     res = await calls.place_call(
         "warning", case["id"], protected["phone"], agent,
-        {"name": protected["name"], "safe_phrase": phrase, "reasons": " ".join(reasons),
-         "verdict": "estafa" if lang == "es" else "scam"},
+        {"name": name, "safe_phrase": phrase, "reasons": " ".join(reasons),
+         "verdict": {"es": "estafa", "te": "మోసం"}.get(lang, "scam")},
         mock_script=script,
         mock_result={"status": "completed", "data": {"teach_back_ok": True}},
     )
@@ -276,12 +300,24 @@ async def help_note(case, protected):
     steps = _story_steps(case, lang, money)
     audio = await _tts(" ".join(steps), case["id"], lang)
     link = f"{config.UI_BASE_URL}/rosa/help/{case['id']}"
-    bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=(f"Casi me roban ${money:,}" if money and lang == "es" else f"I almost lost ${money:,}" if money else ("Casi caigo en una estafa" if lang == "es" else "I almost fell for a scam")))
+    bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=_help_title(lang, money))
     await _sms(case, protected["phone"], t("help_note", lang, link=link))
+
+
+def _help_title(lang, money):
+    if lang == "es":
+        return f"Casi me roban ${money:,}" if money else "Casi caigo en una estafa"
+    if lang == "te":
+        return f"${money:,} పోయేవి, తప్పించుకున్నాను" if money else "మోసం నుంచి తప్పించుకున్నాను"
+    return f"I almost lost ${money:,}" if money else "I almost fell for a scam"
 
 
 def _story_steps(case, lang, money):
     kind = "family" if case["signals"].get("claims_family") else "link"
+    if lang == "te":
+        if kind == "family":
+            return ["ఎవరో నా కొడుకునని చెప్పి డబ్బు అడిగారు.", "Guardian నా అసలు కొడుకుకి కాల్ చేసింది. అతను బాగానే ఉన్నాడు.", "అది మోసం. నేను ఏమీ పంపలేదు."]
+        return ["బ్యాంక్ నుంచి అని లింక్‌తో మెసేజ్ వచ్చింది.", "Guardian దాన్ని సురక్షితమైన చోట తెరిచింది: అది నకిలీ పేజీ.", "నేను ఏదీ నొక్కలేదు. మీకూ వస్తే, తెరవొద్దు."]
     if lang == "es":
         if kind == "family":
             return ["Me escribió alguien diciendo que era mi hijo, pidiendo dinero.",
@@ -294,7 +330,7 @@ def _story_steps(case, lang, money):
 
 async def _tts(text: str, case_id: str, lang: str) -> str | None:
     import os
-    voice = os.environ.get("ELEVENLABS_VOICE_ID_ES" if lang == "es" else "ELEVENLABS_VOICE_ID_EN", "")
+    voice = os.environ.get({"es": "ELEVENLABS_VOICE_ID_ES", "te": "ELEVENLABS_VOICE_ID_TE"}.get(lang, "ELEVENLABS_VOICE_ID_EN"), "") or os.environ.get("ELEVENLABS_VOICE_ID_EN", "")
     if not (config.live(config.ELEVENLABS_API_KEY) and voice):
         return None
     import httpx
@@ -303,7 +339,7 @@ async def _tts(text: str, case_id: str, lang: str) -> str | None:
         async with httpx.AsyncClient(timeout=30) as c:
             r = await c.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
                              headers={"xi-api-key": config.ELEVENLABS_API_KEY},
-                             json={"text": text, "model_id": "eleven_multilingual_v2"})
+                             json={"text": text, "model_id": "eleven_v3" if lang == "te" else "eleven_multilingual_v2"})  # multilingual_v2 has no Telugu
             r.raise_for_status()
         p = Path(__file__).resolve().parent.parent / "data" / "notes"
         p.mkdir(parents=True, exist_ok=True)

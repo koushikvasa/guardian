@@ -77,12 +77,19 @@ class Graph:
             return fam
         return {**(self.mem["family"] or {}), "members": list(self.mem["people"].values())}
 
-    def person_by_phone(self, phone: str) -> dict | None:
+    def people_by_phone(self, phone: str) -> list[dict]:
+        """Several members may share one phone (one-phone rehearsals); protected members first."""
         p = norm_phone(phone)
-        for m in self.family()["members"]:
-            if _key(m["phone"]) == _key(p):
-                return m
-        return None
+        hits = [m for m in self.family()["members"] if _key(m["phone"]) == _key(p)]
+        return sorted(hits, key=lambda m: 0 if m.get("role") == "protected" else 1)
+
+    def person_by_phone(self, phone: str) -> dict | None:
+        hits = self.people_by_phone(phone)
+        return hits[0] if hits else None
+
+    def protected_for_lang(self, lang: str) -> dict:
+        prot = self.by_role("protected")
+        return next((m for m in prot if m.get("lang") == lang), prot[0])
 
     def person(self, pid: str) -> dict | None:
         return next((m for m in self.family()["members"] if str(m["id"]).split(":")[-1] == pid), None)

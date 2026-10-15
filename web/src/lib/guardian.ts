@@ -10,6 +10,7 @@ export type CaseState = {
   id: string;
   text?: string;
   lang?: string;
+  protected?: string;
   status: "open" | "closed";
   verdict?: { score: number; label: "safe" | "suspicious" | "scam"; reasons: string[]; fired: Fired[] };
   detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string };
@@ -39,7 +40,7 @@ function reduce(s: State, e: GEvent | { kind: "__conn"; ok: boolean }): State {
   const prev: CaseState = s.cases[id] || { id, status: "open", calls: {} };
   const c: CaseState = { ...prev, calls: { ...prev.calls } };
   const k = ev.kind;
-  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; }
+  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; c.protected = ev.protected as string; }
   else if (k === "verdict") c.verdict = ev as unknown as CaseState["verdict"];
   else if (k === "detonation.live") c.liveView = (ev.live_view_url as string) || null;
   else if (k === "detonation.result") c.detonation = ev as CaseState["detonation"];
@@ -76,7 +77,10 @@ export function useGuardian() {
   return { ...state, latest };
 }
 
-export async function fireDemo(beat: "link" | "family" | "money", lang: "es" | "en" = "es") {
+export type Lang = "en" | "te" | "es";
+export const LANG_NAME: Record<string, string> = { en: "English", te: "Telugu", es: "Spanish" };
+
+export async function fireDemo(beat: "link" | "family" | "money", lang: Lang = "en") {
   return fetch(`${API}/demo/${beat}?lang=${lang}`, { method: "POST" }).then((r) => r.json());
 }
 

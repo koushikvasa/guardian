@@ -2,7 +2,7 @@
 
   python run.py mock            all sponsors mocked; money waits for Daniel's button
   python run.py dev             real keys from .env (unset keys stay mocked)
-  python run.py demo link       fire a demo beat: link | family | money
+  python run.py demo link te    fire a demo beat: link | family | money, lang en (Jasmine) | te (Amma) | es (Rosa)
   python run.py decline A-2041  Daniel's "Don't send it" from the terminal
   python run.py watch           print the live event stream
   python run.py test            unit tests
@@ -44,7 +44,7 @@ def main(argv):
     elif cmd == "dev":
         serve({}, reload=True)
     elif cmd == "demo":
-        post(f"/demo/{rest[0] if rest else 'link'}?lang={rest[1] if len(rest) > 1 else 'es'}")
+        post(f"/demo/{rest[0] if rest else 'link'}?lang={rest[1] if len(rest) > 1 else 'en'}")
     elif cmd == "decline":
         post(f"/cases/{rest[0]}/key", {"decision": "decline"})
     elif cmd == "watch":

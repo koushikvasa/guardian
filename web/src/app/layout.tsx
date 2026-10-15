@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Guardian",
-  description: "An AI scam shield for families. Spanish and English.",
+  description: "An AI scam shield for families. Telugu, English and Spanish.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

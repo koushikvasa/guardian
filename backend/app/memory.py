@@ -164,13 +164,13 @@ class Memory:
         if self.live and marker.exists():
             return
         members = fam.get("members") or []
-        protected = next((m for m in members if m.get("role") == "protected"), None)
         facts = []
         for m in members:
             role = {"protected": "the protected member", "guardian": "the family guardian", "member": "a family member"}.get(m.get("role"), "a member")
             facts.append(f"{m['name']} is {role} of {name} and speaks {'Spanish' if m.get('lang') == 'es' else 'English'}.")
-        for fact in (protected or {}).get("story_facts") or []:
-            facts.append(f"{protected['name']} knows this about her family: {fact}.")
+        for pm in (m for m in members if m.get("role") == "protected"):
+            for fact in pm.get("story_facts") or []:
+                facts.append(f"{pm['name']} knows this about her family: {fact}.")
         if fam.get("second_key_threshold_usd"):
             g = next((m["name"] for m in members if m.get("role") == "guardian"), "a guardian")
             facts.append(f"In {name}, any money request above ${fam['second_key_threshold_usd']} must wait for {g}'s second key.")

@@ -21,7 +21,7 @@ export default function Stage() {
           <Brand />
           <span className="pill" style={{ background: connected ? "#DDF3EA" : "#FCE4E2" }}>{connected ? "live" : "reconnecting"}</span>
         </div>
-        {!c && <h1 className="serif" style={{ fontSize: 56 }}>Waiting for Rosa&rsquo;s phone&hellip;</h1>}
+        {!c && <h1 className="serif" style={{ fontSize: 56 }}>Waiting for a forwarded text&hellip;</h1>}
         {c && (
           <>
             <div style={{ color: "var(--muted)", fontWeight: 600 }}>Case {c.id}</div>
@@ -88,7 +88,7 @@ export default function Stage() {
         {c && callOrder.filter((k) => c.calls[k]).map((k) => (
           <div key={k} className="card" style={{ background: "var(--ink)", color: "#fff", border: "none" }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#B9C0DA", fontSize: 14, marginBottom: 8 }}>
-              <span>{k === "verify" ? "Calling the real Daniel" : k === "second_key" ? "Second key call to Daniel" : "Warning call to Rosa"}</span>
+              <span>{k === "verify" ? "Calling the real Daniel" : k === "second_key" ? "Second key call to Daniel" : `Warning call to ${c.protected || "her"}`}</span>
               <span>{c.calls[k].status}</span>
             </div>
             {c.calls[k].lines.slice(-4).map((l, i) => (

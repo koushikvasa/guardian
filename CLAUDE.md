@@ -1,6 +1,6 @@
 # Guardian — notes for Claude Code
 
-AI scam shield for families. Built for Daytona HackSprint NYC (Fri Oct 16, 2026). Demo persona: Rosa (protected, Spanish), Daniel (guardian, English).
+AI scam shield for families. Built for Daytona HackSprint NYC (Fri Oct 16, 2026). Demo personas: Jasmine (protected, English, phrase "Buckie the dog"), Amma (protected, Telugu, phrase "Kanna"), Daniel (guardian, English). Rosa (Spanish) stays as a third protected member. Each protected member has her own safe phrase; real phones come from `FAMILY_PHONE_<ID>` env vars.
 
 ## Layout
 - `backend/` FastAPI. `app/pipeline.py` is the case engine; `app/rules.py` decides verdicts (LLM only extracts signals).

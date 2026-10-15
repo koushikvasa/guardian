@@ -1,7 +1,7 @@
 "use client";
 import { use, useRef, useState } from "react";
 import { Brand } from "@/components/Logo";
-import { turnKey, useGuardian } from "@/lib/guardian";
+import { LANG_NAME, turnKey, useGuardian } from "@/lib/guardian";
 
 const HOLD_MS = 1500;
 
@@ -14,6 +14,8 @@ export default function DanielKey({ params }: { params: Promise<{ id: string }> 
   const [held, setHeld] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const state = c?.money?.state;
+  const who = c?.protected || "Mom";
+  const inLang = LANG_NAME[c?.lang || "en"] || "English";
 
   const startHold = () => {
     const t0 = Date.now();
@@ -31,8 +33,8 @@ export default function DanielKey({ params }: { params: Promise<{ id: string }> 
       {!c?.money && <p style={{ marginTop: 40, color: "var(--muted)", fontSize: 18 }}>No money request is waiting for your key.</p>}
       {c?.money && (
         <>
-          <div style={{ marginTop: 26, color: "var(--muted)" }}>Your mom needs your key</div>
-          <h1 className="serif" style={{ fontSize: 36, lineHeight: 1.12, margin: "8px 0 0" }}>Mom wants to send ${c.money.amount.toLocaleString()}</h1>
+          <div style={{ marginTop: 26, color: "var(--muted)" }}>{who} needs your key</div>
+          <h1 className="serif" style={{ fontSize: 36, lineHeight: 1.12, margin: "8px 0 0" }}>{who} wants to send ${c.money.amount.toLocaleString()}</h1>
           <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontWeight: 700 }}>What Guardian found</div>
             {(c.verdict?.fired || []).filter((f) => f.weight > 0).map((f) => (
@@ -58,10 +60,10 @@ export default function DanielKey({ params }: { params: Promise<{ id: string }> 
               </>
             ) : (
               <div className="card" style={{ fontWeight: 700, fontSize: 19, textAlign: "center", color: state === "declined" ? "var(--danger)" : "var(--ok)" }}>
-                {state === "declined" ? "Stopped. Guardian is telling Mom in Spanish." : "Approved. Guardian told Mom."}
+                {state === "declined" ? `Stopped. Guardian is telling ${who} in ${inLang}.` : `Approved. Guardian told ${who}.`}
               </div>
             )}
-            <div style={{ fontSize: 14, color: "var(--muted)", textAlign: "center" }}>Guardian tells Mom your answer in Spanish.</div>
+            <div style={{ fontSize: 14, color: "var(--muted)", textAlign: "center" }}>Guardian tells {who} your answer in {inLang}.</div>
           </div>
         </>
       )}

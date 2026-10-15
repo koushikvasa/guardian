@@ -11,13 +11,14 @@ from .tracing import span
 URL_RE = re.compile(r"(https?://\S+|\b(?:bit\.ly|tinyurl\.com|t\.co|cutt\.ly|rb\.gy|is\.gd|t\.ly)/\S+|\b[a-z0-9-]+\.(?:top|xyz|click|info|online|site|live|shop)(?:/\S*)?)", re.I)
 SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "cutt.ly", "rb.gy", "is.gd", "t.ly")
 
-FAMILY_WORDS = r"\b(soy tu hij[oa]|soy (daniel|tu nieto|tu nieta)|mam[aá]|abuel[ao]|it'?s me,? (mom|grandma|grandpa)|mom,? it'?s|grandma,? it'?s|soy yo)\b"
-SECRECY = r"\b(no le digas|no le diga|no se lo digas|secreto|don'?t tell|keep (this|it) (between us|secret|quiet))\b"
-URGENCY = r"\b(ya mismo|ahora mismo|urgente|en 24 horas|inmediatamente|hoy mismo|right now|urgent|immediately|within 24 hours|asap|final notice)\b"
+# Telugu alternatives sit outside the \b groups: \b is unreliable around Telugu vowel signs.
+FAMILY_WORDS = r"(?:\b(soy tu hij[oa]|soy (daniel|tu nieto|tu nieta)|mam[aá]|abuel[ao]|it'?s me,? (mom|grandma|grandpa)|mom,? it'?s|grandma,? it'?s|soy yo)\b|అమ్మా|అమ్మ |నానమ్మ|అమ్మమ్మ|నేను (?:[A-Z][a-z]+))"
+SECRECY = r"(?:\b(no le digas|no le diga|no se lo digas|secreto|don'?t tell|keep (this|it) (between us|secret|quiet))\b|ఎవరికీ చెప్పొద్దు|ఎవ్వరికీ చెప్ప|రహస్యం)"
+URGENCY = r"(?:\b(ya mismo|ahora mismo|urgente|en 24 horas|inmediatamente|hoy mismo|right now|urgent|immediately|within 24 hours|asap|final notice)\b|వెంటనే|అర్జెంట్|ఇప్పుడే|24 గంటల్లో|ఈ రోజే)"
 MONEY = r"(\$\s?[\d,]+|\b\d[\d,]*\s?(d[oó]lares|dollars|usd)\b)"
 METHODS = {
-    "gift_card": r"gift ?cards?|tarjetas? de regalo|google play|itunes|steam card",
-    "wire": r"\bwire\b|transferencia|giro",
+    "gift_card": r"gift ?cards?|tarjetas? de regalo|google play|itunes|steam card|గిఫ్ట్ కార్డ",
+    "wire": r"\bwire\b|transferencia|giro|వైర్",
     "crypto": r"crypto|bitcoin|usdt|cripto",
     "zelle": r"zelle",
     "western_union": r"western union",
@@ -34,12 +35,12 @@ BRANDS = {
     "PayPal": r"paypal",
     "IRS": r"\birs\b",
 }
-NAME_RE = re.compile(r"soy (daniel|[A-Z][a-z]+)|it'?s me,? ([A-Z][a-z]+)", re.I)
+NAME_RE = re.compile(r"soy (daniel|[A-Z][a-z]+)|it'?s me,? ([A-Z][a-z]+)|నేను ([A-Z][a-z]+)", re.I)
 
 PROMPT = """You extract scam signals from one message a family member received. Return ONLY JSON:
 {"urls": [string], "claims_family": bool, "claimed_name": string|null,
  "money_request": {"amount": number|null, "method": "gift_card"|"wire"|"crypto"|"zelle"|"western_union"|"cash_courier"|"bitcoin_atm"|"other"} | null,
- "secrecy": bool, "urgency": bool, "brand": string|null, "shortener": bool, "language": "es"|"en"}
+ "secrecy": bool, "urgency": bool, "brand": string|null, "shortener": bool, "language": "es"|"en"|"te"}
 Do not judge whether it is a scam. Only report what is in the text.
 Message:
 """
@@ -75,7 +76,7 @@ def regex_extract(text: str) -> dict:
     return {
         "urls": urls,
         "claims_family": bool(re.search(FAMILY_WORDS, t, re.I)),
-        "claimed_name": (name_m.group(1) or name_m.group(2)).title() if name_m else None,
+        "claimed_name": next(g for g in name_m.groups() if g).title() if name_m else None,
         "money_request": money,
         "secrecy": bool(re.search(SECRECY, t, re.I)),
         "urgency": bool(re.search(URGENCY, t, re.I)),
@@ -86,6 +87,8 @@ def regex_extract(text: str) -> dict:
 
 
 def detect_lang(text: str) -> str:
+    if re.search(r"[\u0C00-\u0C7F]", text):  # Telugu script
+        return "te"
     es = len(re.findall(r"\b(el|la|su|que|de|por|para|usted|está|cuenta|mamá|dinero|no|es|en)\b", text.lower()))
     en = len(re.findall(r"\b(the|your|is|to|and|you|account|mom|money|please|of)\b", text.lower()))
     return "es" if es > en else "en"

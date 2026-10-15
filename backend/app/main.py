@@ -7,7 +7,7 @@
   POST /webhooks/elevenlabs    ElevenLabs post-call webhook (optional; polling also works)
   GET  /family, POST /family   setup screen
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
-  POST /demo/{link|family|money}  fire a demo beat without a phone
+  POST /demo/{link|family|money}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
   GET  /health                 which sponsors are live vs mock
 """
 import asyncio
@@ -39,6 +39,9 @@ DEMO = {
     "money": {"es": "Mamá soy Daniel, necesito $2,000 por transferencia para la fianza en Tijuana, urgente. No le digas a nadie",
               "en": "Mom it's me Daniel, I need $2,000 by wire for bail in Tijuana, urgent. Don't tell anyone"},
 }
+DEMO["link"]["te"] = "Keystone Bank: మీ ఖాతా బ్లాక్ అయింది. 24 గంటల్లో ధృవీకరించండి: bit.ly/kst-verif"
+DEMO["family"]["te"] = "అమ్మా నేను Daniel, కారు యాక్సిడెంట్ అయింది, పోలీస్ స్టేషన్‌లో ఉన్నాను. వేరే నంబర్ నుంచి కాల్ చేస్తున్నా, ఎవరికీ చెప్పొద్దు"
+DEMO["money"]["te"] = "అమ్మా నేను Daniel, బెయిల్ కోసం అర్జెంట్‌గా $2,000 wire పంపు. ఎవరికీ చెప్పొద్దు"
 
 
 @app.on_event("startup")
@@ -175,14 +178,15 @@ async def scoreboard():
 
 
 @app.post("/demo/{beat}")
-async def demo(beat: str, bg: BackgroundTasks, lang: str = "es"):
+async def demo(beat: str, bg: BackgroundTasks, lang: str = "en"):
     if beat not in DEMO:
         return JSONResponse({"error": f"beat must be one of {list(DEMO)}"}, 400)
-    rosa = graph.by_role("protected")[0]
-    text = DEMO[beat][lang if lang in ("es", "en") else "es"]
-    bus.emit("sms.in", None, frm=rosa["phone"], body=text)
-    bg.add_task(pipeline.handle_message, rosa["phone"], text, "+16195550199" if beat != "link" else None)
-    return {"ok": True, "beat": beat, "text": text}
+    lang = lang if lang in DEMO["link"] else "en"
+    who = graph.protected_for_lang(lang)  # Jasmine (en), Amma (te), Rosa (es)
+    text = DEMO[beat][lang]
+    bus.emit("sms.in", None, frm=who["phone"], body=text)
+    bg.add_task(pipeline.handle_message, who["phone"], text, "+16195550199" if beat != "link" else None, who["id"])
+    return {"ok": True, "beat": beat, "lang": lang, "protected": who["name"], "text": text}
 
 
 def _public(c: dict) -> dict:
