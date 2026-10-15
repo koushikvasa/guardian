@@ -8,13 +8,14 @@ const PROTECTED_NAME: Record<string, string> = { jasmine: "Jasmine", amma: "Amma
 
 type Member = { id: string; name: string; role: string; lang: string; safe_phrase?: string | null; phone: string; whatsapp?: string | null; story_facts: string[] };
 type Family = { name: string; second_key_threshold_usd: number; members: Member[] };
-type Hit = { text: string; when: string; score: number };
+type Hit = { text: string; when: string; score: number; kind?: "memory" | "knowledge" };
 
 /** The family page: who is protected, their phrases and languages, the money threshold, today's cases, and what Guardian remembers. */
 export default function FamilyPage() {
   const g = useGuardian();
   const [fam, setFam] = useState<Family | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
   const [q, setQ] = useState("What does Guardian know about Daniel?");
   const [mem, setMem] = useState<{ hits: Hit[]; trace_id?: string | null; tier?: string | null } | null>(null);
   const [asking, setAsking] = useState(false);
@@ -22,7 +23,7 @@ export default function FamilyPage() {
   useEffect(() => { load(); }, []);
   const ask = async (query: string) => { setAsking(true); try { setMem(await (await fetch(`${API}/memory?q=${encodeURIComponent(query)}`)).json()); } catch { setMem(null); } setAsking(false); };
   useEffect(() => { ask(q); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-  const patch = async (body: object, key: string) => { setSaving(key); await fetch(`${API}/family`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); await load(); setSaving(null); };
+  const patch = async (body: object, key: string) => { setSaving(key); await fetch(`${API}/family`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); await load(); setSaving(null); setSaved(key); setTimeout(() => setSaved((k) => (k === key ? null : k)), 4000); };
   const [past, setPast] = useState<CaseState[]>([]);
   useEffect(() => { fetch(`${API}/cases`).then((r) => r.json()).then((cs: CaseState[]) => setPast(cs.map((c) => ({ ...c, protected: PROTECTED_NAME[c.protected || ""] || c.protected, calls: c.calls || {} })))).catch(() => {}); }, [g.order.length]);
   const liveIds = new Set(g.order);
@@ -54,14 +55,16 @@ export default function FamilyPage() {
               <div className="serif" style={{ fontSize: 30 }}>{m.name}</div>
               <span className="pill" style={{ background: "#E4E8F1" }}>protected · {LANG_NAME[m.lang] || m.lang}</span>
             </div>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
-              Family phrase
-              <input id={`phrase-${m.id}`} defaultValue={m.safe_phrase || ""} onBlur={(e) => { if (e.target.value !== (m.safe_phrase || "")) patch({ members: [{ id: m.id, safe_phrase: e.target.value }] }, m.id); }}
-                style={{ font: "inherit", fontSize: 18, fontWeight: 600, color: "var(--ink)", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff" }} />
-            </label>
+            <form onSubmit={(e) => { e.preventDefault(); const v = (new FormData(e.currentTarget).get("phrase") as string).trim(); if (v && v !== (m.safe_phrase || "")) patch({ members: [{ id: m.id, safe_phrase: v }] }, m.id); }} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label htmlFor={`phrase-${m.id}`} style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Family phrase</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input id={`phrase-${m.id}`} name="phrase" defaultValue={m.safe_phrase || ""} style={{ flex: 1, minWidth: 0, font: "inherit", fontSize: 18, fontWeight: 600, color: "var(--ink)", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff" }} />
+                <button className="btn btn-dark" type="submit" style={{ minHeight: 44, padding: "0 16px" }}>{saving === m.id ? "Saving…" : "Save"}</button>
+              </div>
+              {saved === m.id && <div style={{ fontSize: 13, color: "var(--ok)", fontWeight: 600 }}>Saved. Guardian says this at the start of every call to {m.name}.</div>}
+            </form>
             <div style={{ fontSize: 14, color: "var(--muted)" }}>Phone {m.phone}{m.whatsapp ? ` · WhatsApp ${m.whatsapp}` : ""}</div>
             {m.story_facts.length > 0 && <div style={{ fontSize: 14 }}><div style={{ color: "var(--muted)", fontWeight: 600, marginBottom: 4 }}>Things only the family knows</div>{m.story_facts.map((f) => <div key={f}>• {f}</div>)}</div>}
-            {saving === m.id && <div style={{ fontSize: 13, color: "var(--ok)" }}>Saved.</div>}
           </div>
         ))}
       </section>
@@ -110,11 +113,11 @@ export default function FamilyPage() {
             <button className="btn btn-dark" type="submit" style={{ minHeight: 42 }}>{asking ? "…" : "Ask"}</button>
           </form>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["What does Guardian know about Daniel?", "Which links were scams?", "Who asked for money?"].map((s) => <button key={s} type="button" className="pill" onClick={() => { setQ(s); ask(s); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>{s}</button>)}
+            {["What does Guardian know about Daniel?", "Which links were scams?", "How does the Microsoft scam work?", "Why are gift cards a scam?"].map((s) => <button key={s} type="button" className="pill" onClick={() => { setQ(s); ask(s); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>{s}</button>)}
           </div>
           {mem && mem.hits.length === 0 && <div style={{ color: "var(--muted)", fontSize: 15 }}>Nothing yet for that question.</div>}
           {mem?.hits.slice(0, 5).map((h, i) => (
-            <div key={i} style={{ fontSize: 15, lineHeight: 1.4, borderTop: "1px solid var(--line)", paddingTop: 8 }}><span style={{ color: "var(--muted)", fontSize: 13, marginRight: 8 }}>{h.when}</span>{h.text}</div>
+            <div key={i} style={{ fontSize: 15, lineHeight: 1.4, borderTop: "1px solid var(--line)", paddingTop: 8 }}><span className="pill" style={{ background: h.kind === "knowledge" ? "#E4E8F1" : "#DCE2FF", marginRight: 8, fontSize: 11 }}>{h.kind === "knowledge" ? "knows" : h.when}</span>{h.text.replace(/^Scam knowledge: /, "")}</div>
           ))}
           {mem && <div style={{ fontSize: 12, color: "var(--muted)" }}>SurrealDB Agent Memory · {mem.tier || "mock"}{mem.trace_id ? ` · trace ${mem.trace_id}` : ""}</div>}
         </div>

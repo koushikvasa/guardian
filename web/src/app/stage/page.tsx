@@ -6,8 +6,8 @@ import { PhoneAmma } from "@/components/PhoneAmma";
 import { PhoneDaniel } from "@/components/PhoneDaniel";
 import { API, Beat, CaseState, fireDemo, GEvent, Lang, LANG_NAME, useGuardian, useHealth } from "@/lib/guardian";
 
-const PROTECTED: Record<Lang, string> = { en: "Jasmine", te: "Amma", es: "Rosa" };
-const PHRASE: Record<Lang, string> = { en: "Buckie the dog", te: "Kanna", es: "flan de la abuela" };
+const DEFAULT_NAME: Record<Lang, string> = { en: "Jasmine", te: "Amma", es: "Rosa" };
+type FamMember = { id: string; name: string; role: string; lang: string; safe_phrase?: string | null };
 const BEATS: { key: Beat; hot: string; label: string }[] = [
   { key: "link", hot: "1", label: "bank link" }, { key: "family", hot: "2", label: "“it’s Daniel”" }, { key: "money", hot: "3", label: "$2,000 wire" }, { key: "support", hot: "4", label: "“Microsoft” call" },
 ];
@@ -37,6 +37,14 @@ export default function Stage() {
   const [dry, setDry] = useState(true);
   const [panel, setPanel] = useState(false);
   const [fit, setFit] = useState({ scale: 1, left: 0, top: 0, h: CANVAS_H });
+  const [members, setMembers] = useState<FamMember[]>([]);
+  useEffect(() => {
+    const load = () => fetch(`${API}/family`).then((r) => r.json()).then((f) => setMembers(f.members || [])).catch(() => {});
+    load(); const id = setInterval(load, 15000); return () => clearInterval(id);
+  }, []);
+  const protectedFor = (l: Lang) => members.find((m) => m.role === "protected" && m.lang === l);
+  const PROTECTED: Record<Lang, string> = { en: protectedFor("en")?.name || DEFAULT_NAME.en, te: protectedFor("te")?.name || DEFAULT_NAME.te, es: protectedFor("es")?.name || DEFAULT_NAME.es };
+  const phraseFor = (l: Lang) => protectedFor(l)?.safe_phrase || "";
   useEffect(() => {
     // The canvas is always CANVAS_W wide and fills the window's width; its height follows the window's shape,
     // down to CANVAS_MIN_H, below which the whole canvas shrinks to fit the height instead.
@@ -162,7 +170,7 @@ export default function Stage() {
 
       {/* Amma */}
       <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", minHeight: 0 }}>
-        <PhoneAmma ref={pA} c={c} sms={g.sms} who={who} phrase={PHRASE[(c?.lang as Lang) || lang]} />
+        <PhoneAmma ref={pA} c={c} sms={g.sms} who={who} phrase={phraseFor((c?.lang as Lang) || lang)} />
       </div>
 
       {/* desk */}
@@ -175,7 +183,7 @@ export default function Stage() {
             <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.06, margin: 0 }}>{PROTECTED[lang]} doesn&rsquo;t forward anything. Her phone does, and her family answers.</h1>
             <p style={{ fontSize: 19, color: "var(--muted)", margin: 0, lineHeight: 1.45 }}>Text {PROTECTED[lang]}&rsquo;s phone from any number, or press <b>1</b>–<b>4</b> to fire a beat in {LANG_NAME[lang]}. <b>L</b> switches the family member, <b>P</b> opens the presenter panel.</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {(["te", "en", "es"] as Lang[]).map((l) => <span key={l} className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[l]} · {LANG_NAME[l]} · “{PHRASE[l]}”</span>)}
+              {(["te", "en", "es"] as Lang[]).map((l) => <span key={l} className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[l]} · {LANG_NAME[l]}{phraseFor(l) ? ` · “${phraseFor(l)}”` : ""}</span>)}
               <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>Daniel · guardian · holds the second key</span>
             </div>
           </div>

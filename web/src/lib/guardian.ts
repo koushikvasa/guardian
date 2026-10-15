@@ -24,7 +24,7 @@ export type CaseState = {
   help?: { steps: string[]; title: string; audio_url?: string | null };
   evals?: Record<string, boolean>;
   timeToCall?: number | null;
-  memory?: { hits: { text: string; when: string; score: number }[]; trace_id?: string | null; tier?: string | null; prior_scam?: { what: string; date: string } | null };
+  memory?: { hits: { text: string; when: string; score: number; kind?: "memory" | "knowledge" }[]; trace_id?: string | null; tier?: string | null; prior_scam?: { what: string; date: string } | null };
 };
 
 export type State = { cases: Record<string, CaseState>; order: string[]; sms: GEvent[]; connected: boolean; last?: GEvent };
@@ -52,7 +52,7 @@ function reduce(s: State, e: GEvent | { kind: "__conn"; ok: boolean }): State {
   else if (k === "teachback") c.teachback = ev.ok as boolean;
   else if (k === "help.note.ready") c.help = { steps: ev.steps as string[], title: ev.title as string, audio_url: ev.audio_url as string | null };
   else if (k === "eval.live") c.evals = { grounded: !!ev.grounded, no_asks: !!ev.no_asks, language: !!ev.language };
-  else if (k === "memory.recalled") c.memory = { hits: (ev.hits as { text: string; when: string; score: number }[]) || [], trace_id: ev.trace_id as string | null, tier: ev.tier as string | null, prior_scam: (ev.prior_scam as { what: string; date: string } | null) ?? null };
+  else if (k === "memory.recalled") c.memory = { hits: (ev.hits as { text: string; when: string; score: number; kind?: "memory" | "knowledge" }[]) || [], trace_id: ev.trace_id as string | null, tier: ev.tier as string | null, prior_scam: (ev.prior_scam as { what: string; date: string } | null) ?? null };
   else if (k === "case.closed") { c.status = "closed"; c.timeToCall = ev.time_to_call_s as number | null; }
   else if (k.startsWith("call.")) {
     const [, call, phase] = k.split(".");

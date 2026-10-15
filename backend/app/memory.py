@@ -17,7 +17,10 @@ from . import bus, config
 from .tracing import span
 
 VERDICT_TAG = "Guardian judged it a scam"
+KNOWLEDGE_TAG = "Scam knowledge:"
+KNOWLEDGE_SCOPE = "knowledge/scams"  # shared across every family; the family's own memories stay in family/<name>
 _SEEDED = Path(__file__).resolve().parent.parent / "data" / ".memory_seeded"
+_KNOWLEDGE = Path(__file__).resolve().parent.parent / "data" / "memory_knowledge.jsonl"
 
 
 def _tokens(s: str) -> set[str]:
@@ -52,14 +55,15 @@ class Memory:
         self._scopes_ok.add(scope)
 
     # ---------- remember ----------
-    def remember(self, text: str, case_id: str | None = None) -> dict:
+    def remember(self, text: str, case_id: str | None = None, scope: str | None = None) -> dict:
+        scope = scope or self.scope
         with span("memory.remember", case=case_id or "") as s:
             entities, attributes = [], 0
             if self.live:
                 try:
-                    self._ensure_scope(self.scope)
+                    self._ensure_scope(scope)
                     r = httpx.post(self._base() + "/facts", headers=self._h(), timeout=60,
-                                   json={"text": text, "infer": "full", "scopes": [self.scope]})
+                                   json={"text": text, "infer": "full", "scopes": [scope]})
                     r.raise_for_status()
                     ex = r.json().get("extraction") or {}
                     entities = [e.get("name") for e in ex.get("entities", []) if e.get("name")]
@@ -82,7 +86,7 @@ class Memory:
             if self.live:
                 try:
                     r = httpx.post(self._base() + "/query", headers=self._h(), timeout=config.MEMORY_RECALL_TIMEOUT_S + 2,
-                                   json={"query": query[:600], "lens": [self.scope]})
+                                   json={"query": query[:600], "lens": [self.scope, KNOWLEDGE_SCOPE]})
                     r.raise_for_status()
                     d = r.json()
                     out["tier"] = d.get("tier")
@@ -90,7 +94,8 @@ class Memory:
                     for h in d.get("hits") or []:
                         if h.get("source") == "memory_chunk" and h.get("text"):
                             out["hits"].append({"text": h["text"], "when": (h.get("occurredAt") or "")[:10],
-                                                "score": round(float(h.get("score") or 0), 2)})
+                                                "score": round(float(h.get("score") or 0), 2),
+                                                "kind": "knowledge" if h["text"].startswith(KNOWLEDGE_TAG) else "memory"})
                 except Exception as e:
                     bus.emit("memory.error", case_id, op="recall", error=str(e)[:200])
             else:
@@ -101,7 +106,8 @@ class Memory:
                     if ov >= 2:
                         scored.append((ov / max(1, len(qt)), m))
                 scored.sort(key=lambda x: -x[0])
-                out["hits"] = [{"text": m["text"], "when": time.strftime("%Y-%m-%d", time.localtime(m["at"])), "score": round(sc, 2)}
+                out["hits"] = [{"text": m["text"], "when": time.strftime("%Y-%m-%d", time.localtime(m["at"])), "score": round(sc, 2),
+                                "kind": "knowledge" if m["text"].startswith(KNOWLEDGE_TAG) else "memory"}
                                for sc, m in scored]
                 out["tier"], out["trace_id"] = "mock", "mock"
             out["hits"] = out["hits"][:limit]
@@ -181,6 +187,29 @@ class Memory:
             marker.write_text(time.strftime("%Y-%m-%d %H:%M"), encoding="utf-8")
         except Exception:
             pass
+
+
+    def seed_knowledge(self, path: Path = _KNOWLEDGE, force: bool = False) -> int:
+        """Shared scam knowledge (data/memory_knowledge.jsonl) into the knowledge scope, once per memory context."""
+        import json
+
+        marker = _SEEDED.with_suffix(".knowledge." + (config.SURREAL_MEMORY_CONTEXT or "mock")[:12])
+        if self.live and marker.exists() and not force:
+            return 0
+        n = 0
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            text = json.loads(line)["text"]
+            if self.remember(text, None, scope=KNOWLEDGE_SCOPE).get("ok"):
+                n += 1
+        try:
+            marker.parent.mkdir(exist_ok=True)
+            marker.write_text(f"{n} facts {time.strftime('%Y-%m-%d %H:%M')}", encoding="utf-8")
+        except Exception:
+            pass
+        return n
 
 
 memory = Memory()

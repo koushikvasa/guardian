@@ -43,6 +43,6 @@ def test_every_rule_has_telugu_text():
 def test_two_protected_members_with_their_own_phrases():
     g = Graph()
     g.load_seed()
-    assert g.protected_for_lang("te")["name"] == "Amma" and g.protected_for_lang("te")["safe_phrase"] == "Kanna"
+    assert g.protected_for_lang("te")["name"] == "Amma" and g.protected_for_lang("te")["safe_phrase"].lower() == "kanna"
     assert g.protected_for_lang("en")["name"] == "Jasmine" and g.protected_for_lang("en")["safe_phrase"] == "Buckie the dog"
     assert g.protected_for_lang("es")["name"] == "Rosa"

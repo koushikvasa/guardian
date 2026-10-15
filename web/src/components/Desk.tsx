@@ -150,7 +150,16 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
             <div key={f.rule} className="reason show" style={{ transitionDelay: `${i * 120}ms`, fontSize: 18, lineHeight: 1.35 }}><i>{i + 1}</i><span>{f.reason} <small>· {f.rule}</small></span></div>
           ))}
         </div>
-        {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.memory.hits[0].text}>Guardian remembers · {c.memory.hits[0].when}: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}{c.memory.trace_id ? ` · trace ${c.memory.trace_id.slice(0, 6)}` : ""}</div>}
+        {(() => {
+          const remembered = c.memory?.hits.find((h) => h.kind !== "knowledge");
+          const known = c.memory?.hits.find((h) => h.kind === "knowledge");
+          return (
+            <>
+              {remembered && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={remembered.text}>Guardian remembers · {remembered.when}: {remembered.text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}{c.memory?.trace_id ? ` · trace ${c.memory.trace_id.slice(0, 6)}` : ""}</div>}
+              {known && <div className="mem" style={{ background: "#EEF1F6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={known.text}>Guardian knows · {known.text.replace(/^Scam knowledge: /, "")}</div>}
+            </>
+          );
+        })()}
         {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "#E4E8F1" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
       </>
     );

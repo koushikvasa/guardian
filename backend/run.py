@@ -8,6 +8,7 @@
   python run.py test            unit tests
   python run.py eval            offline eval -> data/scoreboard.json
   python run.py check <name>    smoke test: elevenlabs | daytona | anchor | surreal | phoenix | bedrock
+  python run.py seed-memory     load data/memory_knowledge.jsonl into SurrealDB Agent Memory (add --force to reload)
 """
 import json
 import os
@@ -59,6 +60,11 @@ def main(argv):
         sys.exit(subprocess.call([PY, "-m", "pytest", "-q", "tests"]))
     elif cmd == "eval":
         sys.exit(subprocess.call([PY, "evals/run_eval.py"]))
+    elif cmd == "seed-memory":
+        sys.path.insert(0, ".")
+        from app.memory import memory
+        n = memory.seed_knowledge(force="--force" in rest)
+        print(f"seeded {n} knowledge facts" if n else "already seeded (use --force to reload)")
     elif cmd == "check":
         name = {"surreal": "surreal", "surrealdb": "surreal"}.get(rest[0], rest[0])
         sys.exit(subprocess.call([PY, f"scripts/check_{name}.py", *rest[1:]]))

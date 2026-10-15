@@ -73,6 +73,8 @@ async def startup():
     tracing.init()
     graph.load_seed()
     asyncio.create_task(asyncio.to_thread(memory.seed_family, graph.family()))  # once per memory context
+    if not memory.live:
+        asyncio.create_task(asyncio.to_thread(memory.seed_knowledge))  # the mock twin knows the same things
     print("[guardian] sponsors live:", json.dumps(config.status()))
 
 
