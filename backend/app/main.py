@@ -7,7 +7,8 @@
   POST /webhooks/elevenlabs    ElevenLabs post-call webhook (optional; polling also works)
   GET  /key/{id}               Daniel's second key page (phone-openable, through PUBLIC_BASE_URL)
   GET  /help/{id}              the help voice note as a shareable page
-  GET  /family, POST /family   setup screen
+  GET  /family, POST /family   the family page (phones masked; POST edits phrases, languages, threshold only)
+  GET  /memory?q=              what Guardian remembers, with the retrieval trace
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
   POST /demo/{link|family|money|support}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
   GET  /health                 which sponsors are live vs mock
@@ -219,17 +220,44 @@ async def help_page(case_id: str):
     return Response(render_help(c, h["name"], h["title"], h["steps"], audio, c["lang"]), media_type="text/html; charset=utf-8")
 
 
+def _mask(phone: str | None) -> str:
+    p = (phone or "").replace("whatsapp:", "")
+    return f"…{p[-4:]}" if len(p) >= 4 else ""
+
+
 @app.get("/family")
 async def get_family():
-    return graph.family()
+    """The family as the manager page sees it: phones masked, nothing secret."""
+    fam = graph.family()
+    members = [{"id": str(m.get("id", "")).split(":")[-1], "name": m.get("name"), "role": m.get("role"), "lang": m.get("lang"),
+                "safe_phrase": m.get("safe_phrase"), "phone": _mask(m.get("phone")), "whatsapp": _mask(m.get("whatsapp")) if m.get("whatsapp") else None,
+                "story_facts": m.get("story_facts") or []} for m in fam["members"]]
+    return {"name": fam.get("name"), "second_key_threshold_usd": fam.get("second_key_threshold_usd", 500), "members": members}
 
 
 @app.post("/family")
-async def set_family(payload: dict):
+async def patch_family(payload: dict):
+    """Safe edits only: names, languages, phrases, story facts, the money threshold. Phones never pass through here."""
     p = ROOT / "data" / "seed_family.json"
-    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    seed = json.loads(p.read_text(encoding="utf-8"))
+    if "second_key_threshold_usd" in payload:
+        seed["second_key_threshold_usd"] = max(0, int(payload["second_key_threshold_usd"]))
+    for upd in payload.get("members", []):
+        m = next((x for x in seed["members"] if x["id"] == upd.get("id")), None)
+        if not m:
+            continue
+        for k in ("name", "lang", "safe_phrase", "story_facts"):
+            if k in upd:
+                m[k] = upd[k]
+    p.write_text(json.dumps(seed, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     graph.load_seed(p)
     return {"ok": True}
+
+
+@app.get("/memory")
+async def memory_query(q: str = "What does Guardian know about this family?"):
+    """What Guardian remembers, with the retrieval trace (SurrealDB Agent Memory; mock twin otherwise)."""
+    return await asyncio.to_thread(memory.recall, q[:300], None)
 
 
 @app.get("/scoreboard")
