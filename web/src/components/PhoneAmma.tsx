@@ -1,5 +1,5 @@
 "use client";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { CaseState, GEvent } from "@/lib/guardian";
 import { Mark } from "./Mark";
 
@@ -18,14 +18,22 @@ export const PhoneAmma = forwardRef<HTMLDivElement, { c: CaseState | undefined; 
   const [linger, setLinger] = useState(false);
   const [secs, setSecs] = useState(0);
   useEffect(() => { if (live) { setSecs(0); const t = setInterval(() => setSecs((s) => s + 1), 1000); return () => clearInterval(t); } }, [live, c?.id]);
-  useEffect(() => { if (call && !live && call.lines.length) { setLinger(true); const t = setTimeout(() => setLinger(false), 9000); return () => clearTimeout(t); } }, [call, live]);
+  useEffect(() => { setLinger(false); }, [c?.id]);
+  useEffect(() => {
+    if (!(call && !live && call.lines.length)) return;
+    setLinger(true);
+    const t = setTimeout(() => setLinger(false), 9000);
+    return () => { clearTimeout(t); setLinger(false); };
+  }, [call, live]);
   const show = live || linger;
   const mine = (c ? sms.filter((m) => m.case === c.id && m.kind === "sms.out" && m.role !== "guardian") : []);
+  const thread = useRef<HTMLDivElement>(null);
+  useEffect(() => { const t = thread.current; if (t) t.scrollTop = t.scrollHeight; }, [mine.length, c?.id]);
 
   return (
     <div className="phone2" ref={ref} lang={lang}>
       <div className="bar"><Mark size={34} tilt={false} /><div>Guardian<small>{who}&rsquo;s phone</small></div></div>
-      <div className="thread">
+      <div className="thread" ref={thread}>
         {c?.text && <div className="msg in"><span className="k">{c.sender || "Unknown number"}</span>{c.text}</div>}
         {mine.map((m, i) => (
           <div key={i} className={`msg g${m.key === "scam_calling" || m.key === "verify_denied" || m.key === "key_declined" ? " alert" : ""}`} style={m.delivered === false ? { opacity: 0.55 } : undefined}>

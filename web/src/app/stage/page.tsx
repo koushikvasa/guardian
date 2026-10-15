@@ -38,7 +38,7 @@ export default function Stage() {
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
   const c = (sel && g.cases[sel]) || g.latest;
   const who = c?.protected || PROTECTED[lang];
-  const stage = useRef<HTMLDivElement>(null), pA = useRef<HTMLDivElement>(null), pD = useRef<HTMLDivElement>(null), desk = useRef<HTMLDivElement>(null), fly = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null), pA = useRef<HTMLDivElement>(null), pD = useRef<HTMLDivElement>(null), desk = useRef<HTMLDivElement>(null);
   const showD = needsDaniel(c);
 
   useEffect(() => { try { setDry(localStorage.getItem("guardian.dry") !== "0"); } catch {} }, []);
@@ -64,12 +64,21 @@ export default function Stage() {
   // flying bubbles: case opened (Amma -> desk), texts out (desk -> phone)
   const flown = useRef(0);
   const flyTo = useCallback((from: HTMLElement | null, to: HTMLElement | null, text: string, inbound: boolean) => {
-    const f = fly.current, s = stage.current; if (!f || !s || !from || !to) return;
+    const s = stage.current; if (!s || !from || !to) return;
     const sr = s.getBoundingClientRect(), a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-    f.className = `fly${inbound ? " in" : ""}`; f.textContent = text.slice(0, 90);
-    f.style.left = `${a.left - sr.left + a.width * 0.3}px`; f.style.top = `${a.top - sr.top + a.height * 0.25}px`; f.style.opacity = "1"; f.style.transform = "scale(1)";
-    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.left = `${b.left - sr.left + b.width * 0.2}px`; f.style.top = `${b.top - sr.top + b.height * 0.35}px`; f.style.transform = "scale(.7)"; }));
-    setTimeout(() => { f.style.opacity = "0"; }, 800);
+    const f = document.createElement("div");  // one element per flight: it can never get stuck
+    f.className = `fly${inbound ? " in" : ""}`; f.textContent = text.slice(0, 90); f.setAttribute("aria-hidden", "true");
+    f.style.transition = "none"; f.style.opacity = "1";
+    f.style.left = `${a.left - sr.left + a.width * 0.3}px`; f.style.top = `${a.top - sr.top + a.height * 0.25}px`;
+    s.appendChild(f);
+    const dx = (b.left - sr.left + b.width * 0.2) - (a.left - sr.left + a.width * 0.3);
+    const dy = (b.top - sr.top + b.height * 0.35) - (a.top - sr.top + a.height * 0.25);
+    const anim = f.animate(
+      [{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.72)`, opacity: 1, offset: 0.8 }, { transform: `translate(${dx}px,${dy}px) scale(.72)`, opacity: 0 }],
+      { duration: 1000, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" },
+    );
+    anim.onfinish = () => f.remove();
+    setTimeout(() => f.remove(), 1500);
   }, []);
   useEffect(() => {
     const evs = g.sms.slice(flown.current); flown.current = g.sms.length;
@@ -167,13 +176,17 @@ export default function Stage() {
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 10, flexWrap: "wrap" }}>
         <div className="sp" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {SPONSORS.map((s) => <span key={s} className={`pill${sponsors.has(s) ? " lit" : ""}`} style={{ background: sponsors.has(s) ? undefined : "#F3F4F8" }}>{s}</span>)}
+          {c?.timeToCall != null && <span className="pill" style={{ background: "#E4E8F1" }}>first call in {c.timeToCall}s</span>}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          {c?.timeToCall != null && <span className="pill" style={{ background: "#E4E8F1" }}>first call in {c.timeToCall}s</span>}
+          {(["te", "en", "es"] as Lang[]).map((l) => (
+            <button key={l} className="pill" onClick={() => setLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]}</button>
+          ))}
+          <span style={{ width: 4 }} />
+          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>▶ {b.label}</button>)}
           {texts && texts.budget != null && <span className="pill" style={{ background: "#F3F4F8", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
         </div>
       </div>
-      <div ref={fly} className="fly" aria-hidden="true" />
     </main>
   );
 }

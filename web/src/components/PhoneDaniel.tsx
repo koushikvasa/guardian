@@ -11,7 +11,7 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
   const callKey = c ? ["second_key", "verify"].find((k) => c.calls[k]) : undefined;
   const call = callKey && c ? c.calls[callKey] : undefined;
   const live = !!call && !["completed", "no_answer", "failed"].includes(call.status);
-  const keyOpen = !!c?.money;
+  const keyOpen = !!c?.money && !live;
   const who = c?.protected || "Mom";
   const inLang = LANG_NAME[c?.lang || "en"] || "English";
   const [held, setHeld] = useState(0);
@@ -37,15 +37,21 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
           </div>
         )}
       </div>
+      <div className={`callover${live ? " show" : ""}`} aria-live="polite">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={44} tilt={false} mood="calling" /><div style={{ fontWeight: 700 }}>Guardian<small style={{ display: "block", color: "#B9C0DA", fontWeight: 500 }}>{call?.status === "connected" ? "On the call" : "Calling…"}</small></div></div>
+        <div className="cap now">{callKey === "verify" ? `Did you contact ${who} today asking for help or money?` : `${who} wants to send $${c?.money?.amount.toLocaleString()} by ${c?.money?.method}. Do you want her to send it?`}</div>
+        <div style={{ fontSize: 13, color: "#B9C0DA" }}>{callKey === "verify" ? "One question, on your saved number." : "A spoken yes is never enough. Approval needs your press-and-hold."}</div>
+        <div className="wave" aria-hidden="true">{Array.from({ length: 16 }).map((_, i) => <i key={i} />)}</div>
+      </div>
       <div className={`keypane${keyOpen ? " show" : ""}`}>
         {c?.money && (
           <>
             <div style={{ fontSize: 13, color: "var(--muted)" }}>{who} needs your key</div>
             <h3 className="serif" style={{ fontWeight: 400, fontSize: 26, lineHeight: 1.1, margin: 0 }}>{who} wants to send ${c.money.amount.toLocaleString()}</h3>
             <div style={{ fontSize: 14, display: "flex", flexDirection: "column", gap: 4 }}>
-              {(c.verdict?.fired || []).filter((f) => f.weight > 0).slice(0, 3).map((f) => <div key={f.rule}>• {f.reason_en ?? f.reason}</div>)}
+              {(c.verdict?.fired || []).filter((f) => f.weight > 0 && f.rule !== "remembered_scam").slice(0, 3).map((f) => <div key={f.rule}>• {f.reason_en ?? f.reason}</div>)}
             </div>
-            {c.memory && c.memory.hits.length > 0 && <div className="mem">Guardian remembers: {c.memory.hits[0].text.slice(0, 90)}</div>}
+            {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Guardian remembers: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}</div>}
             {state === "locked" ? (
               <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
                 <button className="btn btn-dark" style={{ minHeight: 48, fontSize: 16 }} onClick={() => c && turnKey(c.id, "decline")}>Don&rsquo;t send it</button>

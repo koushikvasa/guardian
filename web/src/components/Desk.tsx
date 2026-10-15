@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { API, CaseState, LANG_NAME } from "@/lib/guardian";
 import { Mark, Mood, Look } from "./Mark";
+import { Hero } from "./Hero";
 
 const LABEL: Record<string, string> = { scam: "SCAM", suspicious: "SUSPICIOUS", safe: "SAFE" };
 const LABEL_COLOR: Record<string, string> = { scam: "var(--danger)", suspicious: "#6B4A10", safe: "var(--ok)" };
@@ -59,6 +60,7 @@ export function steps(c: CaseState): Step[] {
     { key: "rem", title: "Remembered", state: c.status === "closed" ? "done" : "todo", result: c.status === "closed" ? "memory + herd" : undefined },
   ];
   if (c.status !== "closed" && !s.some((x) => x.state === "now")) { const i = s.findIndex((x) => x.state === "todo"); if (i > 0) s[i].state = "now"; }
+  if (c.status === "closed") s.forEach((x) => { if (x.state === "todo") { x.state = "done"; x.result = "not needed"; } });
   return s;
 }
 
@@ -95,8 +97,11 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
               </div>
             ))}
           </div>
-          <div className="card" style={{ minWidth: 0, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", gap: 10 }}>
-            {focus(c, now, stampOn)}
+          <div style={{ minWidth: 0, minHeight: 0, display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", gap: 12 }}>
+            <div className="card" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {focus(c, now, stampOn)}
+            </div>
+            <div style={{ minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Hero c={c} /></div>
           </div>
         </div>
       )}
@@ -146,7 +151,7 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
           ))}
         </div>
         {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.memory.hits[0].text}>Guardian remembers · {c.memory.hits[0].when}: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}{c.memory.trace_id ? ` · trace ${c.memory.trace_id.slice(0, 6)}` : ""}</div>}
-        {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: "auto" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "#E4E8F1" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
+        {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "#E4E8F1" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
       </>
     );
   }
@@ -158,7 +163,7 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
         {head(mc.live ? `On the line with ${toWhom}` : `Call to ${toWhom} ended`)}
         <div className="serif" style={{ fontSize: 22, lineHeight: 1.25 }}>{mc.live ? (mc.call.status === "connected" ? "Connected. Watch the phone for the captions." : "Ringing…") : c.verify ? `Daniel: ${c.verify}.` : mc.call.status.replace("_", " ")}</div>
         <div style={{ color: "var(--muted)", fontSize: 14 }}>{mc.key === "warning" ? `Says the family phrase first, then two reasons in ${LANG_NAME[c.lang || "en"]}, then asks her what she will do next time.` : mc.key === "verify" ? "One question, on his saved number: did you contact her today?" : "Explains what was asked and why it looks wrong. A spoken yes is never enough: approval needs his press-and-hold."}</div>
-        {c.money && <div style={{ marginTop: "auto", fontSize: 13, color: "var(--muted)" }}>Money stays locked until Daniel's key. Guardian cannot approve. No timeout.</div>}
+        {c.money && <div style={{ fontSize: 13, color: "var(--muted)" }}>Money stays locked until Daniel's key. Guardian cannot approve. No timeout.</div>}
       </>
     );
   }
