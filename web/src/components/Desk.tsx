@@ -76,20 +76,20 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
   const now = list.find((s) => s.state === "now")?.key;
 
   return (
-    <div style={{ display: "grid", gridTemplateRows: "auto 1fr", gap: 14, minWidth: 0, height: "100%" }}>
+    <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", gap: 12, minWidth: 0, height: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <Mark size={88} mood={mood} look={lookAt} />
-        <div className="serif" style={{ fontSize: 25, lineHeight: 1.2 }} aria-live="polite">{say}</div>
+        <Mark size={80} mood={mood} look={lookAt} />
+        <div className="serif" style={{ fontSize: 22, lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }} aria-live="polite">{say}</div>
       </div>
       {c && (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 300px) 1fr", gap: 18, minHeight: 0 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 270px) 1fr", gap: 16, minHeight: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 0, overflow: "hidden" }}>
             {list.map((s) => (
               <div key={s.key} className={`step ${s.state}`}>
                 <span className="dot" />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>{s.title}</div>
-                  {s.result && <div style={{ fontSize: 12, color: "var(--muted)", overflowWrap: "anywhere" }}>{s.result}</div>}
+                  <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{s.title}</div>
+                  {s.result && <div style={{ fontSize: 11.5, color: "var(--muted)", overflowWrap: "anywhere", lineHeight: 1.25 }}>{s.result}</div>}
                 </div>
                 <span className="ts">{s.ts || ""}</span>
               </div>
@@ -141,11 +141,11 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
           {c.money && <span className="pill" style={{ background: c.money.state === "locked" ? "#F6E7C5" : c.money.state === "declined" ? "#FCE4E2" : "#DDF3EA", color: c.money.state === "locked" ? "#6B4A10" : c.money.state === "declined" ? "#8C1D18" : "var(--ok)" }}>${c.money.amount.toLocaleString()} · {c.money.state === "locked" ? "locked, waiting for Daniel's key" : c.money.state === "declined" ? "stopped by Daniel" : "approved by Daniel"}</span>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
-          {v.fired.filter((f) => f.weight > 0).slice(0, 5).map((f, i) => (
+          {v.fired.filter((f) => f.weight > 0 && f.rule !== "remembered_scam").slice(0, 4).map((f, i) => (
             <div key={f.rule} className="reason show" style={{ transitionDelay: `${i * 120}ms`, fontSize: 15 }}><i>{i + 1}</i><span>{f.reason} <small>· {f.rule}</small></span></div>
           ))}
         </div>
-        {c.memory && c.memory.hits.length > 0 && <div className="mem">Guardian remembers: {c.memory.hits[0].text}{c.memory.trace_id ? ` · SurrealDB trace ${c.memory.trace_id.slice(0, 8)}` : ""}</div>}
+        {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.memory.hits[0].text}>Guardian remembers · {c.memory.hits[0].when}: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}{c.memory.trace_id ? ` · trace ${c.memory.trace_id.slice(0, 6)}` : ""}</div>}
         {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: "auto" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "#E4E8F1" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
       </>
     );

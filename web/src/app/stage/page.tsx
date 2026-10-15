@@ -33,7 +33,8 @@ export default function Stage() {
   const health = useHealth();
   const [lang, setLang] = useState<Lang>("en");
   const [sel, setSel] = useState<string | null>(null);
-  const [dry, setDry] = useState(true);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
+  const [dry, setDry] = useState(true);
+  const [panel, setPanel] = useState(false);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
   const c = (sel && g.cases[sel]) || g.latest;
   const who = c?.protected || PROTECTED[lang];
@@ -54,6 +55,8 @@ export default function Stage() {
       const beat = BEATS.find((b) => b.hot === e.key); if (beat) fire(beat.key);
       if (e.key.toLowerCase() === "l") setLang((l) => (l === "en" ? "te" : l === "te" ? "es" : "en"));
       if (e.key.toLowerCase() === "r") toggleDry();
+      if (e.key.toLowerCase() === "p") setPanel((v) => !v);
+      if (e.key === "Escape") setPanel(false);
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, [fire]);
@@ -93,30 +96,43 @@ export default function Stage() {
 
   return (
     <main ref={stage} style={{ height: "100vh", padding: "14px 24px 10px", display: "grid", gridTemplateColumns: showD ? "auto 1fr auto" : "auto 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "12px 24px", position: "relative", overflow: "hidden" }}>
-      {/* top bar */}
-      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18 }}><Mark size={40} tilt={false} /> Guardian</div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="pill" style={{ background: "#E4E8F1" }}>Today</span>
-          {g.order.slice(-5).reverse().map((id) => {
-            const x = g.cases[id]; const on = c?.id === id;
-            return <button key={id} className="pill" onClick={() => setSel(id)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)" }}>{id} · {x.protected || "?"}{x.verdict ? ` · ${x.verdict.label}` : ""}</button>;
-          })}
-        </div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          {(["en", "te", "es"] as Lang[]).map((l) => (
-            <button key={l} className="pill" onClick={() => setLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
-          ))}
-          <span style={{ width: 6 }} />
-          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
+      {/* top bar: what the room should see */}
+      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18, background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Mark size={40} tilt={false} /> Guardian</button>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{c.id} · {c.protected} · {LANG_NAME[c.lang || "en"]}</span>}
+          {!c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[lang]} · {LANG_NAME[lang]}</span>}
           {health?.demo_live ? (
-            <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal · no texts or calls" : "LIVE · texts and calls"}</button>
+            <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal" : "LIVE"}</button>
           ) : (
-            <span className="pill" title="The backend has DEMO_LIVE=0: every beat is a rehearsal" style={{ background: "#fff", border: "1px solid var(--line)", color: "var(--muted)" }}>rehearsal only · no texts or calls</span>
+            <span className="pill" title="DEMO_LIVE=0: every beat is a rehearsal" style={{ background: "#fff", border: "1px solid var(--line)", color: "var(--muted)" }}>rehearsal</span>
           )}
           <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "reconnecting"}</span>
         </div>
       </div>
+
+      {/* presenter drawer: P or the logo */}
+      {panel && (
+        <div style={{ position: "absolute", left: 24, right: 24, top: 64, zIndex: 20, background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 18px 40px rgba(22,27,51,.16)" }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Demo as</span>
+            {(["en", "te", "es"] as Lang[]).map((l) => (
+              <button key={l} className="pill" onClick={() => setLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
+            ))}
+            <span style={{ width: 12 }} />
+            {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => { fire(b.key); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Today</span>
+            {g.order.slice(-6).reverse().map((id) => {
+              const x = g.cases[id]; const on = c?.id === id;
+              return <button key={id} className="pill" onClick={() => { setSel(id); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)" }}>{id} · {x.protected || "?"}{x.verdict ? ` · ${x.verdict.label}` : ""}</button>;
+            })}
+            {g.order.length === 0 && <span style={{ color: "var(--muted)", fontSize: 14 }}>no cases yet</span>}
+            <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>keys: 1–4 beats · L language · P this panel{health?.demo_live ? " · R rehearsal" : ""}</span>
+          </div>
+        </div>
+      )}
 
       {/* Amma */}
       <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
@@ -131,7 +147,7 @@ export default function Stage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 760 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}><Mark size={96} mood="idle" /><div className="serif" style={{ fontSize: 26 }}>Watching. Nothing to do.</div></div>
             <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.06, margin: 0 }}>{PROTECTED[lang]} doesn&rsquo;t forward anything. Her phone does, and her family answers.</h1>
-            <p style={{ fontSize: 19, color: "var(--muted)", margin: 0, lineHeight: 1.45 }}>Text {PROTECTED[lang]}&rsquo;s phone from any number, or press <b>1</b>–<b>4</b> to fire a beat in {LANG_NAME[lang]}. <b>L</b> switches the family member, <b>R</b> toggles rehearsal.</p>
+            <p style={{ fontSize: 19, color: "var(--muted)", margin: 0, lineHeight: 1.45 }}>Text {PROTECTED[lang]}&rsquo;s phone from any number, or press <b>1</b>–<b>4</b> to fire a beat in {LANG_NAME[lang]}. <b>L</b> switches the family member, <b>P</b> opens the presenter panel.</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {(["te", "en", "es"] as Lang[]).map((l) => <span key={l} className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[l]} · {LANG_NAME[l]} · “{PHRASE[l]}”</span>)}
               <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>Daniel · guardian · holds the second key</span>
