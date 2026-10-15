@@ -25,7 +25,7 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
 
   return (
     <div className="phone2" ref={ref}>
-      <div className="bar"><Mark size={34} tilt={false} /><div>Guardian<small>Daniel&rsquo;s phone</small></div></div>
+      <div className="bar"><Mark size={36} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>Daniel&rsquo;s phone</small></div></div>
       <div className="thread">
         {mine.length === 0 && <div className="msg g" style={{ opacity: 0.6 }}><span className="k">Guardian</span>Nothing needs you.</div>}
         {mine.map((m, i) => <div key={i} className="msg g alert" style={m.delivered === false ? { opacity: 0.55 } : undefined}><span className="k">Guardian</span>{String(m.body ?? "").replace(/^Guardian: /, "")}</div>)}
@@ -47,8 +47,8 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
         {c?.money && (
           <>
             <div style={{ fontSize: 13, color: "var(--muted)" }}>{who} needs your key</div>
-            <h3 className="serif" style={{ fontWeight: 400, fontSize: 26, lineHeight: 1.1, margin: 0 }}>{who} wants to send ${c.money.amount.toLocaleString()}</h3>
-            <div style={{ fontSize: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+            <h3 className="serif" style={{ fontWeight: 400, fontSize: 28, lineHeight: 1.1, margin: 0 }}>{who} wants to send ${c.money.amount.toLocaleString()}</h3>
+            <div style={{ fontSize: 15, display: "flex", flexDirection: "column", gap: 4 }}>
               {(c.verdict?.fired || []).filter((f) => f.weight > 0 && f.rule !== "remembered_scam").slice(0, 3).map((f) => <div key={f.rule}>• {f.reason_en ?? f.reason}</div>)}
             </div>
             {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Guardian remembers: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}</div>}

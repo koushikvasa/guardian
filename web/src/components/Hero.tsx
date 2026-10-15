@@ -16,7 +16,7 @@ function Jar({ c }: { c: CaseState }) {
   const sealed = !!d;
   const gone = d?.sandbox_destroyed_s != null;
   return (
-    <svg viewBox="0 0 320 240" style={{ width: "100%", maxHeight: "min(260px, 100%)" }} role="img" aria-label="The link, opened inside a sealed sandbox">
+    <svg viewBox="0 0 320 240" style={{ width: "100%", height: "100%", maxHeight: 420 }} role="img" aria-label="The link, opened inside a sealed sandbox">
       <path d="M100 70 h120 v120 a14 14 0 0 1 -14 14 h-92 a14 14 0 0 1 -14 -14 z" fill="rgba(255,255,255,.65)" stroke={gone ? "#14705A" : "#C3CBE0"} strokeWidth="3" style={{ transition: "stroke .6s" }} />
       <rect x="112" y="78" width="6" height="110" rx="3" fill="rgba(255,255,255,.9)" />
       <g style={{ transition: T, transformOrigin: "160px 140px", transform: gone ? "scale(0.06) rotate(30deg)" : "none", opacity: gone ? 0 : 1 }}>
@@ -49,7 +49,7 @@ function Keys({ c }: { c: CaseState }) {
     </g>
   );
   return (
-    <svg viewBox="0 0 320 240" style={{ width: "100%", maxHeight: "min(260px, 100%)" }} role="img" aria-label="Two keys: hers is turned; Daniel's decides">
+    <svg viewBox="0 0 320 240" style={{ width: "100%", height: "100%", maxHeight: 420 }} role="img" aria-label="Two keys: hers is turned; Daniel's decides">
       <rect x="20" y="30" width="280" height="170" rx="24" fill="#161B33" />
       {key(100, true, "#B8862B")}
       {st === "locked" && <circle cx="220" cy="110" r="46" fill="none" stroke="#E7C77A" strokeWidth="3" strokeDasharray="8 9" style={{ transformOrigin: "220px 110px", animation: "spin 12s linear infinite" }} />}
@@ -73,7 +73,7 @@ function Ring({ c }: { c: CaseState }) {
   const denied = c.verify === "denied";
   const confirmed = c.verify === "confirmed";
   return (
-    <svg viewBox="0 0 320 240" style={{ width: "100%", maxHeight: "min(260px, 100%)" }} role="img" aria-label="Guardian calls the real relative on the saved number">
+    <svg viewBox="0 0 320 240" style={{ width: "100%", height: "100%", maxHeight: 420 }} role="img" aria-label="Guardian calls the real relative on the saved number">
       <line x1="64" y1="140" x2="160" y2="110" stroke="#D7322A" strokeWidth="3" strokeDasharray="8 7" style={{ transition: T, opacity: denied ? 0.25 : 1 }} />
       <line x1="160" y1="110" x2="256" y2="80" stroke="#2E46E5" strokeWidth="4" strokeDasharray="110" strokeDashoffset={calling ? 0 : 110} style={{ transition: "stroke-dashoffset 1.2s ease-out" }} />
       <g transform="translate(64 140)" style={{ transition: T, opacity: denied ? 0.35 : 1, transform: denied ? "translate(64px, 170px)" : undefined }}>

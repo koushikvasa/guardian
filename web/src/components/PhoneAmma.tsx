@@ -28,20 +28,24 @@ export const PhoneAmma = forwardRef<HTMLDivElement, { c: CaseState | undefined; 
   const show = live || linger;
   const mine = (c ? sms.filter((m) => m.case === c.id && m.kind === "sms.out" && m.role !== "guardian") : []);
   const thread = useRef<HTMLDivElement>(null);
-  useEffect(() => { const t = thread.current; if (t) t.scrollTop = t.scrollHeight; }, [mine.length, c?.id]);
+  const [behind, setBehind] = useState(false);
+  const toBottom = () => { const t = thread.current; if (t) { t.scrollTop = t.scrollHeight; setBehind(false); } };
+  useEffect(() => { const t = thread.current; if (!t) return; const atBottom = t.scrollHeight - t.scrollTop - t.clientHeight < 40; if (atBottom || mine.length <= 1) toBottom(); else setBehind(true); }, [mine.length, c?.id]);
+  const onScroll = () => { const t = thread.current; if (t && t.scrollHeight - t.scrollTop - t.clientHeight < 40) setBehind(false); };
 
   return (
     <div className="phone2" ref={ref} lang={lang}>
-      <div className="bar"><Mark size={34} tilt={false} /><div>Guardian<small>{who}&rsquo;s phone</small></div></div>
-      <div className="thread" ref={thread}>
+      <div className="bar"><Mark size={36} tilt={false} /><div style={{ fontSize: 17 }}>Guardian<small style={{ fontSize: 13 }}>{who}&rsquo;s phone</small></div></div>
+      <div className="thread" ref={thread} onScroll={onScroll}>
         {c?.text && <div className="msg in"><span className="k">{c.sender || "Unknown number"}</span>{c.text}</div>}
         {mine.map((m, i) => (
           <div key={i} className={`msg g${m.key === "scam_calling" || m.key === "verify_denied" || m.key === "key_declined" ? " alert" : ""}`} style={m.delivered === false ? { opacity: 0.55 } : undefined}>
             <span className="k">Guardian{m.delivered === false ? " · shown on screen" : ""}</span>{String(m.body ?? "").replace(/^Guardian: /, "")}
           </div>
         ))}
-        {!c && <div style={{ color: "var(--muted)", fontSize: 14, textAlign: "center", padding: 20 }}>Nothing yet.</div>}
+        {!c && <div style={{ color: "var(--muted)", fontSize: 15, textAlign: "center", padding: 20 }}>Nothing yet.</div>}
       </div>
+      {behind && <button className="newpill" onClick={toBottom} type="button">↓ new</button>}
       <div className={`callover${show ? " show" : ""}`} aria-live="polite">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Mark size={44} tilt={false} mood="calling" /><div style={{ fontWeight: 700 }}>Guardian<small style={{ display: "block", color: "#B9C0DA", fontWeight: 500 }}>{live ? (call?.status === "connected" ? `${ui.onCall} · 0:${String(secs).padStart(2, "0")}` : ui.calling) : "Call ended"}</small></div></div>
         {phrase && <div className="phrase">{ui.phrase}: <b>“{phrase}”</b></div>}

@@ -80,18 +80,18 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
   return (
     <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", gap: 12, minWidth: 0, height: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <Mark size={80} mood={mood} look={lookAt} />
-        <div className="serif" style={{ fontSize: 22, lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }} aria-live="polite">{say}</div>
+        <Mark size={92} mood={mood} look={lookAt} />
+        <div className="serif" style={{ fontSize: 30, lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }} aria-live="polite">{say}</div>
       </div>
       {c && (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 270px) 1fr", gap: 16, minHeight: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 290px) 1fr", gap: 18, minHeight: 0 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 0, overflow: "hidden" }}>
             {list.map((s) => (
               <div key={s.key} className={`step ${s.state}`}>
                 <span className="dot" />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{s.title}</div>
-                  {s.result && <div style={{ fontSize: 11.5, color: "var(--muted)", overflowWrap: "anywhere", lineHeight: 1.25 }}>{s.result}</div>}
+                  <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>{s.title}</div>
+                  {s.result && <div style={{ fontSize: 13, color: "var(--muted)", overflowWrap: "anywhere", lineHeight: 1.25 }}>{s.result}</div>}
                 </div>
                 <span className="ts">{s.ts || ""}</span>
               </div>
@@ -101,7 +101,7 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
             <div className="card" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
               {focus(c, now, stampOn)}
             </div>
-            <div style={{ minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Hero c={c} /></div>
+            <div className="heroCell" style={{ minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Hero c={c} /></div>
           </div>
         </div>
       )}
@@ -113,7 +113,7 @@ export function Desk({ c, who, lookAt }: { c: CaseState | undefined; who: string
 function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
   const d = c.detonation;
   const key: StepKey = c.status === "closed" ? "verdict" : now && now !== "recv" ? now : c.verdict ? "verdict" : "check";
-  const head = (t: string) => <div style={{ fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: 700, color: "var(--muted)" }}>{t}</div>;
+  const head = (t: string) => <div style={{ fontSize: 13, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: 700, color: "var(--muted)" }}>{t}</div>;
 
   if (key === "check") {
     if (!d) return <>{head(hasLink(c) ? "Opening the link in a sandbox" : "Reading the story")}<div style={{ color: "var(--muted)" }}>{hasLink(c) ? "The page is fetched, then parsed inside a throwaway Daytona sandbox with no network." : "No link. Guardian reads who is claiming what, and what they want."}</div></>;
@@ -122,10 +122,10 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
         {head("Inside the sandbox")}
         <div className={`sand${d.sandbox_destroyed_s != null ? " gone" : ""}`}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15, color: "var(--danger)", fontWeight: 700, overflowWrap: "anywhere" }}>{String(d.final_domain || "")}</div>
-            {d.title ? <div style={{ fontSize: 14 }}>{String(d.title)}</div> : null}
-            {Array.isArray(d.form_fields) && d.form_fields.length > 0 && <div style={{ fontSize: 14, marginTop: 4 }}>Asks for: <b>{d.form_fields.join(" · ")}</b></div>}
-            <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+            <div style={{ fontSize: 18, color: "var(--danger)", fontWeight: 700, overflowWrap: "anywhere" }}>{String(d.final_domain || "")}</div>
+            {d.title ? <div style={{ fontSize: 16 }}>{String(d.title)}</div> : null}
+            {Array.isArray(d.form_fields) && d.form_fields.length > 0 && <div style={{ fontSize: 16, marginTop: 4 }}>Asks for: <b>{d.form_fields.join(" · ")}</b></div>}
+            <div style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
               {d.browser === "http" ? "Fetched without a browser" : "Anchor Browser opened it"} · parsed inside Daytona sandbox {String(d.sandbox_id || "").slice(0, 6)}{d.domain_age_days != null ? ` · domain ${d.domain_age_days} days old` : ""}
               <div style={{ color: "var(--ok)", fontWeight: 700, marginTop: 2 }}>{d.sandbox_destroyed_s != null ? `Sandbox destroyed in ${d.sandbox_destroyed_s} s` : "Destroying the sandbox…"}</div>
             </div>
@@ -147,7 +147,7 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
           {v.fired.filter((f) => f.weight > 0 && f.rule !== "remembered_scam").slice(0, 4).map((f, i) => (
-            <div key={f.rule} className="reason show" style={{ transitionDelay: `${i * 120}ms`, fontSize: 15 }}><i>{i + 1}</i><span>{f.reason} <small>· {f.rule}</small></span></div>
+            <div key={f.rule} className="reason show" style={{ transitionDelay: `${i * 120}ms`, fontSize: 18, lineHeight: 1.35 }}><i>{i + 1}</i><span>{f.reason} <small>· {f.rule}</small></span></div>
           ))}
         </div>
         {c.memory && c.memory.hits.length > 0 && <div className="mem" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.memory.hits[0].text}>Guardian remembers · {c.memory.hits[0].when}: {c.memory.hits[0].text.replace(/^On \d{4}-\d{2}-\d{2}, /, "")}{c.memory.trace_id ? ` · trace ${c.memory.trace_id.slice(0, 6)}` : ""}</div>}
@@ -161,13 +161,13 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
     return (
       <>
         {head(mc.live ? `On the line with ${toWhom}` : `Call to ${toWhom} ended`)}
-        <div className="serif" style={{ fontSize: 22, lineHeight: 1.25 }}>{mc.live ? (mc.call.status === "connected" ? "Connected. Watch the phone for the captions." : "Ringing…") : c.verify ? `Daniel: ${c.verify}.` : mc.call.status.replace("_", " ")}</div>
-        <div style={{ color: "var(--muted)", fontSize: 14 }}>{mc.key === "warning" ? `Says the family phrase first, then two reasons in ${LANG_NAME[c.lang || "en"]}, then asks her what she will do next time.` : mc.key === "verify" ? "One question, on his saved number: did you contact her today?" : "Explains what was asked and why it looks wrong. A spoken yes is never enough: approval needs his press-and-hold."}</div>
+        <div className="serif" style={{ fontSize: 26, lineHeight: 1.25 }}>{mc.live ? (mc.call.status === "connected" ? "Connected. Watch the phone for the captions." : "Ringing…") : c.verify ? `Daniel: ${c.verify}.` : mc.call.status.replace("_", " ")}</div>
+        <div style={{ color: "var(--muted)", fontSize: 16 }}>{mc.key === "warning" ? `Says the family phrase first, then two reasons in ${LANG_NAME[c.lang || "en"]}, then asks her what she will do next time.` : mc.key === "verify" ? "One question, on his saved number: did you contact her today?" : "Explains what was asked and why it looks wrong. A spoken yes is never enough: approval needs his press-and-hold."}</div>
         {c.money && <div style={{ fontSize: 13, color: "var(--muted)" }}>Money stays locked until Daniel's key. Guardian cannot approve. No timeout.</div>}
       </>
     );
   }
-  if (key === "teach") return <>{head("Teach-back")}<div className="serif" style={{ fontSize: 22 }}>{c.teachback ? "She said it back correctly." : "Explained once more and asked again."}</div></>;
-  if (key === "help") return <>{head("Help note for her friends")}{c.help && <><div className="serif" style={{ fontSize: 22 }}>“{c.help.title}”</div>{c.help.steps.map((s, i) => <div key={i} style={{ fontSize: 14 }}>{i + 1}. {s}</div>)}{c.help.audio_url && <audio controls preload="none" src={`${API}${c.help.audio_url}`} style={{ width: "100%" }} />}</>}</>;
+  if (key === "teach") return <>{head("Teach-back")}<div className="serif" style={{ fontSize: 26 }}>{c.teachback ? "She said it back correctly." : "Explained once more and asked again."}</div></>;
+  if (key === "help") return <>{head("Help note for her friends")}{c.help && <><div className="serif" style={{ fontSize: 26 }}>“{c.help.title}”</div>{c.help.steps.map((s, i) => <div key={i} style={{ fontSize: 14 }}>{i + 1}. {s}</div>)}{c.help.audio_url && <audio controls preload="none" src={`${API}${c.help.audio_url}`} style={{ width: "100%" }} />}</>}</>;
   return <>{head("Remembering")}<div style={{ color: "var(--muted)" }}>Verdict into SurrealDB Agent Memory, fingerprints into the herd graph, trace to Arize.</div></>;
 }

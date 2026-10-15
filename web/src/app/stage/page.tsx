@@ -50,8 +50,9 @@ export default function Stage() {
     calc(); window.addEventListener("resize", calc); return () => window.removeEventListener("resize", calc);
   }, []);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
-  const c = (sel && g.cases[sel]) || g.latest;
+  const c = sel === "__idle__" ? undefined : (sel && g.cases[sel]) || g.latest;
   const who = c?.protected || PROTECTED[lang];
+  const pickLang = (l: Lang) => { setLang(l); if (g.latest && g.latest.protected !== PROTECTED[l]) setSel("__idle__"); };
   const stage = useRef<HTMLDivElement>(null), pA = useRef<HTMLDivElement>(null), pD = useRef<HTMLDivElement>(null), desk = useRef<HTMLDivElement>(null);
   const showD = needsDaniel(c);
 
@@ -67,13 +68,13 @@ export default function Stage() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === "INPUT") return;
       const beat = BEATS.find((b) => b.hot === e.key); if (beat) fire(beat.key);
-      if (e.key.toLowerCase() === "l") setLang((l) => (l === "en" ? "te" : l === "te" ? "es" : "en"));
+      if (e.key.toLowerCase() === "l") pickLang(lang === "en" ? "te" : lang === "te" ? "es" : "en");
       if (e.key.toLowerCase() === "r") toggleDry();
       if (e.key.toLowerCase() === "p") setPanel((v) => !v);
       if (e.key === "Escape") setPanel(false);
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
-  }, [fire]);
+  }, [fire, lang]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // flying bubbles: case opened (Amma -> desk), texts out (desk -> phone)
   const flown = useRef(0);
@@ -120,7 +121,7 @@ export default function Stage() {
 
   return (
     <main style={{ height: "100vh", overflow: "hidden", position: "relative", background: "var(--bg)" }}>
-    <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: fit.h, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "300px 1fr 300px" : "300px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
+    <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: fit.h, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "320px 1fr 320px" : "320px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
       {/* top bar: what the room should see */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18, background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Mark size={40} tilt={false} /> Guardian</button>
@@ -142,7 +143,7 @@ export default function Stage() {
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Demo as</span>
             {(["en", "te", "es"] as Lang[]).map((l) => (
-              <button key={l} className="pill" onClick={() => setLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
+              <button key={l} className="pill" onClick={() => pickLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
             ))}
             <span style={{ width: 12 }} />
             {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => { fire(b.key); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
@@ -189,17 +190,17 @@ export default function Stage() {
       )}
 
       {/* rail */}
-      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 10, flexWrap: "wrap" }}>
-        <div className="sp" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 10, flexWrap: "nowrap", minWidth: 0 }}>
+        <div className="sp" style={{ display: "flex", gap: 6, flexWrap: "nowrap", minWidth: 0, overflow: "hidden" }}>
           {SPONSORS.map((s) => <span key={s} className={`pill${sponsors.has(s) ? " lit" : ""}`} style={{ background: sponsors.has(s) ? undefined : "#F3F4F8" }}>{s}</span>)}
           {c?.timeToCall != null && <span className="pill" style={{ background: "#E4E8F1" }}>first call in {c.timeToCall}s</span>}
         </div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap", flexShrink: 0 }}>
           {(["te", "en", "es"] as Lang[]).map((l) => (
-            <button key={l} className="pill" onClick={() => setLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]}</button>
+            <button key={l} className="pill" onClick={() => pickLang(l)} title={LANG_NAME[l]} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)", fontSize: 14 }}>{PROTECTED[l]}</button>
           ))}
           <span style={{ width: 4 }} />
-          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>▶ {b.label}</button>)}
+          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff", fontSize: 14 }}>▶ {b.label}</button>)}
           {texts && texts.budget != null && <span className="pill" style={{ background: "#F3F4F8", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
         </div>
       </div>
