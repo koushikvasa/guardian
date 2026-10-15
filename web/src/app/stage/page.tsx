@@ -12,7 +12,7 @@ const BEATS: { key: Beat; hot: string; label: string }[] = [
   { key: "link", hot: "1", label: "bank link" }, { key: "family", hot: "2", label: "“it’s Daniel”" }, { key: "money", hot: "3", label: "$2,000 wire" }, { key: "support", hot: "4", label: "“Microsoft” call" },
 ];
 const SPONSORS = ["Twilio", "Anchor", "Daytona", "SurrealDB", "ElevenLabs", "Arize", "AWS"];
-const CANVAS_W = 1600, CANVAS_H = 900;  // the stage is a fixed canvas scaled to fit any screen, like a slide
+const CANVAS_W = 1600, CANVAS_H = 900, CANVAS_MIN_H = 640, CANVAS_MAX_H = 1000;  // the stage is a fixed-width canvas scaled to the window
 
 function needsDaniel(c: CaseState | undefined) { return !!c && (!!c.money || !!c.calls.verify || !!c.calls.second_key); }
 
@@ -36,9 +36,17 @@ export default function Stage() {
   const [sel, setSel] = useState<string | null>(null);
   const [dry, setDry] = useState(true);
   const [panel, setPanel] = useState(false);
-  const [fit, setFit] = useState({ scale: 1, left: 0, top: 0 });
+  const [fit, setFit] = useState({ scale: 1, left: 0, top: 0, h: CANVAS_H });
   useEffect(() => {
-    const calc = () => { const sc = Math.min(window.innerWidth / CANVAS_W, window.innerHeight / CANVAS_H); setFit({ scale: sc, left: (window.innerWidth - CANVAS_W * sc) / 2, top: (window.innerHeight - CANVAS_H * sc) / 2 }); };
+    // The canvas is always CANVAS_W wide and fills the window's width; its height follows the window's shape,
+    // down to CANVAS_MIN_H, below which the whole canvas shrinks to fit the height instead.
+    const calc = () => {
+      const w = window.innerWidth, vh = window.innerHeight;
+      let h = Math.round(CANVAS_W * (vh / w)), sc = w / CANVAS_W;
+      if (h < CANVAS_MIN_H) { h = CANVAS_MIN_H; sc = Math.min(w / CANVAS_W, vh / CANVAS_MIN_H); }
+      if (h > CANVAS_MAX_H) { h = CANVAS_MAX_H; }
+      setFit({ scale: sc, left: (w - CANVAS_W * sc) / 2, top: (vh - h * sc) / 2, h });
+    };
     calc(); window.addEventListener("resize", calc); return () => window.removeEventListener("resize", calc);
   }, []);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
@@ -112,7 +120,7 @@ export default function Stage() {
 
   return (
     <main style={{ height: "100vh", overflow: "hidden", position: "relative", background: "var(--bg)" }}>
-    <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: CANVAS_H, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "300px 1fr 300px" : "300px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
+    <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: fit.h, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "300px 1fr 300px" : "300px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
       {/* top bar: what the room should see */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18, background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Mark size={40} tilt={false} /> Guardian</button>
@@ -152,7 +160,7 @@ export default function Stage() {
       )}
 
       {/* Amma */}
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", minHeight: 0 }}>
         <PhoneAmma ref={pA} c={c} sms={g.sms} who={who} phrase={PHRASE[(c?.lang as Lang) || lang]} />
       </div>
 
@@ -175,7 +183,7 @@ export default function Stage() {
 
       {/* Daniel: only when needed */}
       {showD && (
-        <div className="col" style={{ display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+        <div className="col" style={{ display: "flex", justifyContent: "center", alignItems: "stretch", minHeight: 0 }}>
           <PhoneDaniel ref={pD} c={c} sms={g.sms} />
         </div>
       )}
