@@ -5,6 +5,7 @@
   GET  /cases, /cases/{id}     case state
   POST /cases/{id}/key         Daniel's second key: {"decision": "approve"|"decline"}
   POST /webhooks/elevenlabs    ElevenLabs post-call webhook (optional; polling also works)
+  GET  /key/{id}               Daniel's second key page (phone-openable, through PUBLIC_BASE_URL)
   GET  /help/{id}              the help voice note as a shareable page
   GET  /family, POST /family   setup screen
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
@@ -24,6 +25,7 @@ from . import bus, calls, config, pipeline, tracing
 from .graph import graph
 from .memory import memory
 from .help_page import render as render_help
+from .key_page import render as render_key
 
 ROOT = Path(__file__).resolve().parent.parent
 app = FastAPI(title="Guardian")
@@ -163,6 +165,15 @@ async def el_webhook(request: Request):
     # TODO before Friday if you expose this publicly: verify the ElevenLabs-Signature HMAC header.
     calls.resolve_from_webhook(await request.json())
     return {"ok": True}
+
+
+@app.get("/key/{case_id}")
+async def key_page(case_id: str):
+    """Daniel's second key, openable from the text on his phone. Approve = press-and-hold; Guardian never approves."""
+    c = pipeline.cases.get(case_id)
+    if not c:
+        return Response("No such case.", 404, media_type="text/plain")
+    return Response(render_key(_public(c), config.PUBLIC_BASE_URL.rstrip("/")), media_type="text/html; charset=utf-8")
 
 
 @app.get("/help/{case_id}")

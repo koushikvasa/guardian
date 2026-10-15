@@ -12,7 +12,7 @@ Money waits until {{guardian_name}} turns the second key.
 
 1. Explain in two sentences what she was told and what looks wrong (only the reasons given).
 2. Ask: "Do you want her to send it?"
-3. If no: "Got it. Tap Don't send it in the app, and I'll tell her in Spanish right now." 
+3. If no: "Got it. Tap Don't send it in the app, and I'll tell her in {{language}} right now." 
 4. If yes: "Okay. To approve, press and hold Approve in the app. I can't approve it by voice." 
 5. If unsure: suggest they call her directly first. Money stays locked meanwhile.
 

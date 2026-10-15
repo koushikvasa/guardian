@@ -203,7 +203,7 @@ async def second_key(case, protected, money):
     bus.emit("money.locked", case["id"], amount=amount, method=money.get("method"), guardian=guardian["name"],
              reasons=case["verdict"]["reasons"])
     await _sms(case, protected["phone"], t("key_waiting", lang, amount=f"{amount:,}", guardian=guardian["name"]))
-    link = f"{config.UI_BASE_URL}/daniel/key/{case['id']}"
+    link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/key/{case['id']}"
     await sms.send(case["id"], guardian["phone"], f"Guardian: {protected['name']} wants to send ${amount:,}. Your key is needed: {link}", role="guardian")
 
     fut = asyncio.get_running_loop().create_future()
@@ -212,7 +212,8 @@ async def second_key(case, protected, money):
     call_task = asyncio.create_task(calls.place_call(
         "second_key", case["id"], guardian["phone"], config.SECOND_KEY_AGENT_ID,
         {"guardian_name": guardian["name"], "protected_name": protected["name"], "amount": f"${amount:,}",
-         "method": money.get("method") or "", "reasons": " ".join(case["verdict"]["reasons"]), "key_link": link},
+         "method": money.get("method") or "", "reasons": " ".join(case["verdict"]["reasons"]), "key_link": link,
+         "language": {"es": "Spanish", "te": "Telugu"}.get(lang, "English")},
         mock_script=[
             ("agent", f"Hi {guardian['name']}, it's Guardian. Your mom wants to send ${amount:,} by wire. She was told it's bail for you."),
             ("agent", "It came from an unknown number, asked her to keep it secret, and a wire can't be undone."),
