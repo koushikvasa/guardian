@@ -81,7 +81,7 @@ export default function Stage() {
             <div style={{ background: "#F1F2F5", padding: "10px 16px", color: "#8C1D18", fontSize: 14 }}>{String(d.final_domain || "")}</div>
             {d.screenshot_url && <img src={`${API}${d.screenshot_url}`} alt="What the link opened, seen from inside the sandbox" style={{ width: "100%", display: "block" }} />}
             <div style={{ padding: "12px 16px", fontSize: 14, color: "var(--muted)" }}>
-              {d.mode === "quarantine" ? `Opened with Anchor Browser, parsed inside Daytona sandbox ${String(d.sandbox_id || "")}` : d.mode === "local" ? "Opened with Anchor Browser" : `Opened in Daytona sandbox ${String(d.sandbox_id || "")} with Anchor Browser`} · {d.redirects?.length || 0} redirects · domain {d.domain_age_days ?? "?"} days old{d.sandbox_destroyed_s != null ? ` · sandbox destroyed in ${d.sandbox_destroyed_s}s` : ""}
+              {d.mode === "quarantine" ? `${d.browser === "http" ? "Fetched without a browser" : "Opened with Anchor Browser"}, parsed inside Daytona sandbox ${String(d.sandbox_id || "")}` : d.mode === "local" ? "Opened with Anchor Browser" : `Opened in Daytona sandbox ${String(d.sandbox_id || "")} with Anchor Browser`} · {d.redirects?.length || 0} redirects · domain {d.domain_age_days ?? "?"} days old{d.sandbox_destroyed_s != null ? ` · sandbox destroyed in ${d.sandbox_destroyed_s}s` : ""}
             </div>
           </div>
         )}

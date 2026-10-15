@@ -13,7 +13,7 @@ export type CaseState = {
   protected?: string;
   status: "open" | "closed";
   verdict?: { score: number; label: "safe" | "suspicious" | "scam"; reasons: string[]; fired: Fired[] };
-  detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string };
+  detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string; browser?: string };
   liveView?: string | null;
   money?: { amount: number; method: string; state: "locked" | "declined" | "approved"; guardian?: string };
   calls: Record<string, { status: string; lines: { role: string; text: string }[] }>;

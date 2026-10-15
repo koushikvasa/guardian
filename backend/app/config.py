@@ -38,7 +38,8 @@ TWILIO_ACCOUNT_SID = _get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = _get("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = _get("TWILIO_FROM")
 TWILIO_WHATSAPP_FROM = _get("TWILIO_WHATSAPP_FROM")  # e.g. +14155238886 (Twilio sandbox): texts go over WhatsApp, which delivers without A2P registration
-PUBLIC_BASE_URL = _get("PUBLIC_BASE_URL", "http://localhost:8000")
+PUBLIC_BASE_URL = _get("PUBLIC_BASE_URL", "http://localhost:8787")
+DEMO_LINK = _get("DEMO_LINK")  # override the link inside the demo texts (default: the Keystone mock page when live)
 UI_BASE_URL = _get("UI_BASE_URL", "http://localhost:3000")
 
 # Verify-by-callback timing (seconds). Shorten for the stage.

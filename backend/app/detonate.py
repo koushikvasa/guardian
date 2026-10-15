@@ -38,8 +38,14 @@ async def detonate(url: str, case_id: str) -> dict:
         if mode in ("daytona", "local", "quarantine"):
             sess = {}
             try:
-                sess = await _anchor_session()
-                bus.emit("detonation.live", case_id, live_view_url=sess.get("live_view_url"), session=sess.get("id"))
+                try:
+                    sess = await _anchor_session()
+                    bus.emit("detonation.live", case_id, live_view_url=sess.get("live_view_url"), session=sess.get("id"))
+                except Exception as e:
+                    if mode != "quarantine":
+                        raise
+                    # No cloud browser: fetch the bytes without one; they are still parsed only inside the sandbox.
+                    bus.emit("detonation.fallback", case_id, browser="http", reason=f"anchor: {str(e)[:120]}")
                 fn = {"daytona": _run_daytona, "local": _run_local, "quarantine": _run_quarantine}[mode]
                 result = await asyncio.to_thread(fn, url, sess.get("cdp_url"))
             except Exception as e:  # a sponsor outage (e.g. Anchor 402) must never crash a case; the verdict just has less evidence
@@ -167,6 +173,29 @@ def _fetch_with_anchor(url: str, cdp_url: str) -> dict:
 SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "cutt.ly", "rb.gy", "is.gd", "t.ly")
 
 
+def _fetch_plain(url: str) -> dict:
+    """No browser available: one GET following redirects. No JS runs, nothing is rendered, no screenshot."""
+    import re
+    import urllib.parse
+
+    target = url if url.startswith("http") else "https://" + url
+    with httpx.Client(follow_redirects=True, timeout=config.DETONATE_TIMEOUT_S,
+                      headers={"User-Agent": "Mozilla/5.0 Guardian-safe-fetch"}) as c:
+        r = c.get(target)
+    html = r.text[:2_000_000]
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+    return {
+        "final_url": str(r.url),
+        "title": re.sub(r"\s+", " ", m.group(1)).strip() if m else "",
+        "html": html,
+        "redirects": [str(h.url) for h in r.history],
+        "shortener": urllib.parse.urlparse(target).hostname in SHORTENERS,
+        "download_attempted": False,
+        "target": target,
+        "browser": "http",
+    }
+
+
 def _analyze_in_sandbox(fetched: dict) -> dict:
     """The untrusted HTML is parsed inside a throwaway Daytona sandbox that has no network access."""
     from daytona import CreateSandboxFromSnapshotParams, Daytona, DaytonaConfig
@@ -206,7 +235,8 @@ def _domain_age_days(domain: str) -> int | None:
 
 
 def _run_quarantine(url: str, cdp_url: str | None = None) -> dict:
-    fetched = _fetch_with_anchor(url, cdp_url)
+    fetched = _fetch_with_anchor(url, cdp_url) if cdp_url else _fetch_plain(url)
+    fetched.setdefault("browser", "anchor")
     analysed = _analyze_in_sandbox(fetched)
     host = analysed.get("final_domain") or ""
     parts = host.lower().split(".")

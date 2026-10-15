@@ -55,3 +55,12 @@ def test_guardian_texts_never_ask_for_codes_or_money():
 def test_policy_eval_catches_a_real_ask():
     assert asks_for_secrets("Por favor envíe el código que le llegó")
     assert not asks_for_secrets("No envíe dinero ni códigos")
+
+
+def test_credential_form_on_offbrand_domain_is_scam_even_when_domain_is_old():
+    s = regex_extract("Keystone Bank: Your account is locked. Verify within 24 hours: https://example.trycloudflare.com/mock/keystone/")
+    det = {"final_domain": "example.trycloudflare.com", "brands": ["Keystone Bank"], "official_domain": False,
+           "form_fields": ["Usuario", "Contraseña", "Número de tarjeta y CVV"], "domain_age_days": 2400, "redirects": []}
+    v = rules.evaluate(s, {"saved": False}, det, 0, "en")
+    assert v.label == "scam" and {"brand_domain_mismatch", "credential_form_offbrand"} <= {f["rule"] for f in v.fired}
+    assert "credential_form_new_domain" not in {f["rule"] for f in v.fired}

@@ -32,14 +32,27 @@ for sub in ("shots", "notes"):
 app.mount("/mock", StaticFiles(directory=ROOT / "mock_sites", html=True), name="mock")
 
 DEMO = {
-    "link": {"es": "Banco Keystone: Su cuenta está bloqueada. Verifique en 24 horas: bit.ly/kst-verif",
-             "en": "Keystone Bank: Your account is locked. Verify within 24 hours: bit.ly/kst-verif"},
+    "link": {"es": "Banco Keystone: Su cuenta está bloqueada. Verifique en 24 horas: {link}",
+             "en": "Keystone Bank: Your account is locked. Verify within 24 hours: {link}"},
     "family": {"es": "Mamá soy Daniel, choqué el carro y estoy detenido. Te llamo de otro número, no le digas a nadie por favor",
                "en": "Mom it's me Daniel, I crashed the car and I'm in jail. Calling from a friend's phone, please don't tell anyone"},
     "money": {"es": "Mamá soy Daniel, necesito $2,000 por transferencia para la fianza en Tijuana, urgente. No le digas a nadie",
               "en": "Mom it's me Daniel, I need $2,000 by wire for bail in Tijuana, urgent. Don't tell anyone"},
 }
-DEMO["link"]["te"] = "Keystone Bank: మీ ఖాతా బ్లాక్ అయింది. 24 గంటల్లో ధృవీకరించండి: bit.ly/kst-verif"
+DEMO["link"]["te"] = "Keystone Bank: మీ ఖాతా బ్లాక్ అయింది. 24 గంటల్లో ధృవీకరించండి: {link}"
+
+
+def demo_link() -> str:
+    """Only mock_sites/keystone is ever detonated. Live: the mock page through PUBLIC_BASE_URL; mock mode: a fake short link."""
+    if config.DEMO_LINK:
+        return config.DEMO_LINK
+    if config.live(config.ANCHOR_API_KEY) and config.DETONATE_MODE != "mock":
+        return config.PUBLIC_BASE_URL.rstrip("/") + "/mock/keystone/"
+    return "bit.ly/kst-verif"
+
+
+def demo_text(beat: str, lang: str) -> str:
+    return DEMO[beat][lang].replace("{link}", demo_link())
 DEMO["family"]["te"] = "అమ్మా నేను Daniel, కారు యాక్సిడెంట్ అయింది, పోలీస్ స్టేషన్‌లో ఉన్నాను. వేరే నంబర్ నుంచి కాల్ చేస్తున్నా, ఎవరికీ చెప్పొద్దు"
 DEMO["money"]["te"] = "అమ్మా నేను Daniel, బెయిల్ కోసం అర్జెంట్‌గా $2,000 wire పంపు. ఎవరికీ చెప్పొద్దు"
 
@@ -183,7 +196,7 @@ async def demo(beat: str, bg: BackgroundTasks, lang: str = "en"):
         return JSONResponse({"error": f"beat must be one of {list(DEMO)}"}, 400)
     lang = lang if lang in DEMO["link"] else "en"
     who = graph.protected_for_lang(lang)  # Jasmine (en), Amma (te), Rosa (es)
-    text = DEMO[beat][lang]
+    text = demo_text(beat, lang)
     bus.emit("sms.in", None, frm=who["phone"], body=text)
     bg.add_task(pipeline.handle_message, who["phone"], text, "+16195550199" if beat != "link" else None, who["id"])
     return {"ok": True, "beat": beat, "lang": lang, "protected": who["name"], "text": text}

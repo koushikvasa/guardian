@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 RULES = {
     "herd_match": (100, {"en": "Another family already reported this exact scam.", "es": "Otra familia ya reportó esta misma estafa.", "te": "ఇదే మోసాన్ని ఇంకో కుటుంబం ఇప్పటికే రిపోర్ట్ చేసింది."}),
     "remembered_scam": (60, {"en": "Guardian remembers: the same {what} was a scam on {date}.", "es": "Guardian lo recuerda: el mismo {what} fue una estafa el {date}.", "te": "Guardian గుర్తుంచుకుంది: ఇదే {what} {date}న మోసం."}),
+    "credential_form_offbrand": (40, {"en": "Asks for passwords or card numbers while pretending to be {brand}.", "es": "Pide contraseña o tarjeta haciéndose pasar por {brand}.", "te": "{brand} లాగా నటిస్తూ పాస్‌వర్డ్ లేదా కార్డ్ నంబర్ అడుగుతోంది."}),
     "credential_form_new_domain": (40, {"en": "Asks for passwords or card numbers on a site created {age} days ago.", "es": "Pide contraseña o tarjeta en un sitio creado hace {age} días.", "te": "{age} రోజుల క్రితం సృష్టించిన సైట్‌లో పాస్‌వర్డ్ లేదా కార్డ్ నంబర్ అడుగుతోంది."}),
     "untraceable_payment": (35, {"en": "Wants {method}, which can't be undone.", "es": "Pide {method}, que no se puede deshacer.", "te": "{method} అడుగుతోంది, దాన్ని వెనక్కి తీసుకోలేం."}),
     "brand_domain_mismatch": (30, {"en": "Looks like {brand}, but the address is {domain}.", "es": "Parece de {brand}, pero la dirección es {domain}.", "te": "{brand} లాగా కనిపిస్తోంది, కానీ చిరునామా {domain}."}),
@@ -81,6 +82,8 @@ def evaluate(signals: dict, sender: dict, detonation: dict | None, herd_hits: in
             fire("official_domain", brand=brand)
         else:
             fire("brand_domain_mismatch", brand=brand, domain=domain)
+            if d.get("form_fields") and _asks_credentials(d["form_fields"]):
+                fire("credential_form_offbrand", brand=brand)
 
     if signals.get("claims_family") and not sender.get("saved"):
         fire("family_claim_unsaved_number", name=signals.get("claimed_name") or RELATIVE[lang])
