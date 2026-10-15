@@ -109,7 +109,11 @@ export default function Stage() {
           ))}
           <span style={{ width: 6 }} />
           {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
-          <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal · no texts or calls" : "LIVE · texts and calls"}</button>
+          {health?.demo_live ? (
+            <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal · no texts or calls" : "LIVE · texts and calls"}</button>
+          ) : (
+            <span className="pill" title="The backend has DEMO_LIVE=0: every beat is a rehearsal" style={{ background: "#fff", border: "1px solid var(--line)", color: "var(--muted)" }}>rehearsal only · no texts or calls</span>
+          )}
           <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "reconnecting"}</span>
         </div>
       </div>

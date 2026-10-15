@@ -93,7 +93,7 @@ export async function turnKey(caseId: string, decision: "approve" | "decline") {
 }
 
 export function useHealth() {
-  const [h, setH] = useState<{ live?: Record<string, boolean> } | null>(null);
+  const [h, setH] = useState<{ live?: Record<string, boolean>; demo_live?: boolean } | null>(null);
   useEffect(() => { fetch(`${API}/health`).then((r) => r.json()).then(setH).catch(() => setH(null)); }, []);
   return h;
 }

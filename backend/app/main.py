@@ -77,7 +77,7 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK, "texts": sms.budget()}
+    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK, "texts": sms.budget(), "demo_live": config.DEMO_LIVE}
 
 
 @app.post("/sms")
@@ -254,6 +254,7 @@ async def demo(beat: str, bg: BackgroundTasks, lang: str = "en", dry: int = 0):
     lang = lang if lang in DEMO["link"] else "en"
     who = graph.protected_for_lang(lang)  # Jasmine (en), Amma (te), Rosa (es)
     text = demo_text(beat, lang)
+    dry = 1 if (dry or not config.DEMO_LIVE) else 0  # DEMO_LIVE=0 makes every beat a rehearsal, no matter what was asked
     bus.emit("sms.in", None, frm=who["phone"], body=text, dry=bool(dry))
 
     async def run():

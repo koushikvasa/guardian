@@ -82,6 +82,7 @@ MOCK_CALL_SPEED = float(_get("MOCK_CALL_SPEED", "1.0"))  # <1 = faster scripted 
 
 import contextvars
 
+DEMO_LIVE = _get("DEMO_LIVE", "0") == "1"  # 0 = every demo beat is a rehearsal, whatever the UI asks; set 1 only for the real stage run
 DRY = contextvars.ContextVar("guardian_dry", default=False)  # rehearsal: this one case runs with every sponsor mocked
 
 
