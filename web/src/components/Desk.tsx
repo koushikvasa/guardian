@@ -101,12 +101,24 @@ export function Desk({ c, who, lookAt, onTrace }: { c: CaseState | undefined; wh
             <div className="card" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
               {focus(c, now, stampOn)}
             </div>
-            <div className="heroCell" style={{ minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Hero c={c} /></div>
+            <HeroCell c={c} />
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/** The hero object, only when its cell is tall enough to read (a size container would freeze the SVG animations in Chromium). */
+function HeroCell({ c }: { c: CaseState }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tall, setTall] = useState(true);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const ro = new ResizeObserver(([e]) => setTall(e.contentRect.height >= 190));
+    ro.observe(el); return () => ro.disconnect();
+  }, []);
+  return <div ref={ref} style={{ minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>{tall && <Hero c={c} />}</div>;
 }
 
 /** The focus card: the current step in detail; after the case closes, the verdict with its reasons. */
