@@ -68,7 +68,8 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
     cases[case_id] = case
 
     with span("case", case=case_id, lang=lang) as root:
-        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet)
+        masked = (f"a number ending {original_sender[-4:]}" if original_sender and len(original_sender) >= 4 else None)
+        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet, sender=masked)
         if not quiet:
             await _sms(case, protected["phone"], t("ack", lang), key="ack")
 

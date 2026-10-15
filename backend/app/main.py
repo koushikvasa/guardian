@@ -247,15 +247,22 @@ async def scoreboard():
 
 
 @app.post("/demo/{beat}")
-async def demo(beat: str, bg: BackgroundTasks, lang: str = "en"):
+async def demo(beat: str, bg: BackgroundTasks, lang: str = "en", dry: int = 0):
+    """dry=1 rehearses the beat with every sponsor mocked for that case only: no texts, no calls, no sandbox."""
     if beat not in DEMO:
         return JSONResponse({"error": f"beat must be one of {list(DEMO)}"}, 400)
     lang = lang if lang in DEMO["link"] else "en"
     who = graph.protected_for_lang(lang)  # Jasmine (en), Amma (te), Rosa (es)
     text = demo_text(beat, lang)
-    bus.emit("sms.in", None, frm=who["phone"], body=text)
-    bg.add_task(pipeline.handle_message, who["phone"], text, "+16195550199" if beat != "link" else None, who["id"])
-    return {"ok": True, "beat": beat, "lang": lang, "protected": who["name"], "text": text}
+    bus.emit("sms.in", None, frm=who["phone"], body=text, dry=bool(dry))
+
+    async def run():
+        if dry:
+            config.DRY.set(True)
+        await pipeline.handle_message(who["phone"], text, "+16195550199" if beat != "link" else None, who["id"])
+
+    bg.add_task(run)
+    return {"ok": True, "beat": beat, "lang": lang, "protected": who["name"], "text": text, "dry": bool(dry)}
 
 
 def _public(c: dict) -> dict:

@@ -11,6 +11,8 @@ export type CaseState = {
   text?: string;
   lang?: string;
   protected?: string;
+  sender?: string | null;
+  quiet?: boolean;
   status: "open" | "closed";
   verdict?: { score: number; label: "safe" | "suspicious" | "scam"; reasons: string[]; fired: Fired[] };
   detonation?: Record<string, unknown> & { screenshot_url?: string; final_domain?: string; redirects?: string[]; form_fields?: string[]; domain_age_days?: number; sandbox_destroyed_s?: number; sandbox_id?: string; mode?: string; browser?: string };
@@ -40,7 +42,7 @@ function reduce(s: State, e: GEvent | { kind: "__conn"; ok: boolean }): State {
   const prev: CaseState = s.cases[id] || { id, status: "open", calls: {} };
   const c: CaseState = { ...prev, calls: { ...prev.calls } };
   const k = ev.kind;
-  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; c.protected = ev.protected as string; }
+  if (k === "case.opened") { c.text = ev.text as string; c.lang = ev.lang as string; c.protected = ev.protected as string; c.sender = (ev.sender as string | null) ?? null; c.quiet = !!ev.quiet; }
   else if (k === "verdict") c.verdict = ev as unknown as CaseState["verdict"];
   else if (k === "detonation.live") c.liveView = (ev.live_view_url as string) || null;
   else if (k === "detonation.result") c.detonation = ev as CaseState["detonation"];
@@ -80,8 +82,10 @@ export function useGuardian() {
 export type Lang = "en" | "te" | "es";
 export const LANG_NAME: Record<string, string> = { en: "English", te: "Telugu", es: "Spanish" };
 
-export async function fireDemo(beat: "link" | "family" | "money" | "support", lang: Lang = "en") {
-  return fetch(`${API}/demo/${beat}?lang=${lang}`, { method: "POST" }).then((r) => r.json());
+export type Beat = "link" | "family" | "money" | "support";
+/** dry=true rehearses the beat with every sponsor mocked for that one case: no texts, no calls, no sandbox. */
+export async function fireDemo(beat: Beat, lang: Lang = "en", dry = false) {
+  return fetch(`${API}/demo/${beat}?lang=${lang}${dry ? "&dry=1" : ""}`, { method: "POST" }).then((r) => r.json());
 }
 
 export async function turnKey(caseId: string, decision: "approve" | "decline") {

@@ -136,7 +136,7 @@ class Memory:
         return None
 
     def remember_verdict(self, case: dict, det: dict | None, sender_phone: str | None, protected_name: str):
-        if case["verdict"]["label"] != "scam":
+        if case["verdict"]["label"] != "scam" or config.is_dry():
             return
         s = case.get("signals") or {}
         bits = []

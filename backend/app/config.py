@@ -80,9 +80,18 @@ MOCK_KEY_DECISION = _get("MOCK_KEY_DECISION", "")  # "" = wait for UI, or declin
 MOCK_CALL_SPEED = float(_get("MOCK_CALL_SPEED", "1.0"))  # <1 = faster scripted calls
 
 
+import contextvars
+
+DRY = contextvars.ContextVar("guardian_dry", default=False)  # rehearsal: this one case runs with every sponsor mocked
+
+
+def is_dry() -> bool:
+    return DRY.get()
+
+
 def live(*keys: str) -> bool:
-    """True when every key is set and mock is not forced."""
-    return not FORCE_MOCK and all(keys)
+    """True when every key is set, mock is not forced, and this case is not a rehearsal."""
+    return not FORCE_MOCK and not DRY.get() and all(keys)
 
 
 def status() -> dict:
