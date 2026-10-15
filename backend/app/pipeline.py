@@ -70,7 +70,7 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
     with span("case", case=case_id, lang=lang) as root:
         bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet)
         if not quiet:
-            await _sms(case, protected["phone"], t("ack", lang))
+            await _sms(case, protected["phone"], t("ack", lang), key="ack")
 
         signals = await asyncio.to_thread(extract, case["text"])
         case["signals"] = signals
@@ -137,9 +137,9 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
         return case
 
 
-async def _sms(case: dict, to: str, body: str):
+async def _sms(case: dict, to: str, body: str, key: str = ""):
     case["outbound"].append(body)
-    await sms.send(case["id"], to, body)
+    await sms.send(case["id"], to, body, key=key)
 
 
 # ---------------- text-only route ----------------
@@ -149,11 +149,11 @@ async def text_verdict(case, protected, v):
         if case.get("quiet"):
             return  # auto-forwarded and harmless: say nothing
         reason = next((f["reason"] for f in v.fired if f["weight"] < 0), "")
-        await _sms(case, protected["phone"], t("safe", lang, reason=reason))
+        await _sms(case, protected["phone"], t("safe", lang, reason=reason), key="safe")
     elif v.label == "suspicious":
-        await _sms(case, protected["phone"], t("suspicious", lang, reasons=" ".join(v.reasons()[:2])))
+        await _sms(case, protected["phone"], t("suspicious", lang, reasons=" ".join(v.reasons()[:2])), key="suspicious")
     else:
-        await _sms(case, protected["phone"], t("scam_calling", lang))
+        await _sms(case, protected["phone"], t("scam_calling", lang), key="scam_calling")
         await warning_call(case, protected)
 
 
@@ -164,7 +164,7 @@ async def verify_by_callback(case, protected, claimed_name):
     if not contacts:
         return
     first = contacts[0]
-    await _sms(case, protected["phone"], t("hold_money", lang, name=first["name"]))
+    await _sms(case, protected["phone"], t("hold_money", lang, name=first["name"]), key="hold_money")
     attempts = [first, first] + contacts[1:]
     for i, who in enumerate(attempts):
         if i == 1:
@@ -185,16 +185,16 @@ async def verify_by_callback(case, protected, claimed_name):
                          "data": {"outcome": config.MOCK_VERIFY_OUTCOME}},
         )
         if res["status"] != "completed":
-            await _sms(case, protected["phone"], t("verify_no_answer", lang, name=who["name"]))
+            await _sms(case, protected["phone"], t("verify_no_answer", lang, name=who["name"]), key="verify_no_answer")
             continue
         outcome = (res["data"].get("outcome") or "unclear").lower()
         bus.emit("verify.outcome", case["id"], outcome=outcome, relative=who["name"])
         if outcome == "denied":
             _force_scam(case, "verify_denied")
-            await _sms(case, protected["phone"], t("verify_denied", lang, name=who["name"]))
+            await _sms(case, protected["phone"], t("verify_denied", lang, name=who["name"]), key="verify_denied")
             await warning_call(case, protected)
         elif outcome == "confirmed":
-            await _sms(case, protected["phone"], t("verify_confirmed", lang, name=who["name"]))
+            await _sms(case, protected["phone"], t("verify_confirmed", lang, name=who["name"]), key="verify_confirmed")
         return
     bus.emit("verify.exhausted", case["id"])
 
@@ -207,9 +207,9 @@ async def second_key(case, protected, money):
     case["money"] = {"amount": amount, "method": money.get("method"), "state": "locked"}
     bus.emit("money.locked", case["id"], amount=amount, method=money.get("method"), guardian=guardian["name"],
              reasons=case["verdict"]["reasons"])
-    await _sms(case, protected["phone"], t("key_waiting", lang, amount=f"{amount:,}", guardian=guardian["name"]))
+    await _sms(case, protected["phone"], t("key_waiting", lang, amount=f"{amount:,}", guardian=guardian["name"]), key="key_waiting")
     link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/key/{case['id']}"
-    await sms.send(case["id"], guardian["phone"], f"Guardian: {protected['name']} wants to send ${amount:,}. Your key is needed: {link}", role="guardian")
+    await sms.send(case["id"], guardian["phone"], f"Guardian: {protected['name']} wants to send ${amount:,}. Your key is needed: {link}", role="guardian", key="key_link")
 
     fut = asyncio.get_running_loop().create_future()
     _key_waiters[case["id"]] = fut
@@ -247,10 +247,10 @@ async def second_key(case, protected, money):
     bus.emit("key.decision", case["id"], decision=decision, by=guardian["name"])
     if decision == "decline":
         _force_scam(case, "second_key_declined")
-        await _sms(case, protected["phone"], t("key_declined", lang, guardian=guardian["name"]))
+        await _sms(case, protected["phone"], t("key_declined", lang, guardian=guardian["name"]), key="key_declined")
         await warning_call(case, protected)
     else:
-        await _sms(case, protected["phone"], t("key_approved", lang, guardian=guardian["name"]))
+        await _sms(case, protected["phone"], t("key_approved", lang, guardian=guardian["name"]), key="key_approved")
 
 
 def turn_key(case_id: str, decision: str) -> bool:
@@ -315,7 +315,7 @@ async def help_note(case, protected):
     link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/help/{case['id']}"
     case["help"] = {"title": _help_title(lang, money), "steps": steps, "audio_url": audio, "name": protected["name"]}
     bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=case["help"]["title"], link=link)
-    await _sms(case, protected["phone"], t("help_note", lang, link=link))
+    await _sms(case, protected["phone"], t("help_note", lang, link=link), key="help_note")
 
 
 def _help_title(lang, money):

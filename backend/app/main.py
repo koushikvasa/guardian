@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import bus, calls, config, pipeline, tracing
+from . import bus, calls, config, pipeline, sms, tracing
 from .graph import graph
 from .memory import memory
 from .help_page import render as render_help
@@ -71,7 +71,7 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK}
+    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK, "texts": sms.budget()}
 
 
 @app.post("/sms")

@@ -37,7 +37,9 @@ SECOND_KEY_AGENT_ID = _get("SECOND_KEY_AGENT_ID")
 TWILIO_ACCOUNT_SID = _get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = _get("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = _get("TWILIO_FROM")
-TWILIO_WHATSAPP_FROM = _get("TWILIO_WHATSAPP_FROM")  # e.g. +14155238886 (Twilio sandbox): texts go over WhatsApp, which delivers without A2P registration
+TWILIO_WHATSAPP_FROM = _get("TWILIO_WHATSAPP_FROM")
+TEXT_BUDGET = int(_get("TEXT_BUDGET", "0"))  # max real texts to send (0 = unlimited); the screens show every text regardless
+TEXT_ESSENTIAL_ONLY = _get("TEXT_ESSENTIAL_ONLY", "0") == "1"  # send only the texts a call doesn't cover  # e.g. +14155238886 (Twilio sandbox): texts go over WhatsApp, which delivers without A2P registration
 PUBLIC_BASE_URL = _get("PUBLIC_BASE_URL", "http://localhost:8787")
 DEMO_LINK = _get("DEMO_LINK")  # override the link inside the demo texts (default: the Keystone mock page when live)
 UI_BASE_URL = _get("UI_BASE_URL", "http://localhost:3000")
