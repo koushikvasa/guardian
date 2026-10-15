@@ -37,6 +37,7 @@ SECOND_KEY_AGENT_ID = _get("SECOND_KEY_AGENT_ID")
 TWILIO_ACCOUNT_SID = _get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = _get("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = _get("TWILIO_FROM")
+TWILIO_WHATSAPP_FROM = _get("TWILIO_WHATSAPP_FROM")  # e.g. +14155238886 (Twilio sandbox): texts go over WhatsApp, which delivers without A2P registration
 PUBLIC_BASE_URL = _get("PUBLIC_BASE_URL", "http://localhost:8000")
 UI_BASE_URL = _get("UI_BASE_URL", "http://localhost:3000")
 
@@ -81,10 +82,10 @@ def live(*keys: str) -> bool:
 
 def status() -> dict:
     return {
-        "daytona": live(DAYTONA_API_KEY) and DETONATE_MODE == "daytona",
+        "daytona": live(DAYTONA_API_KEY) and DETONATE_MODE in ("daytona", "quarantine"),
         "anchor": live(ANCHOR_API_KEY) and DETONATE_MODE != "mock",
         "elevenlabs": live(ELEVENLABS_API_KEY, ELEVENLABS_PHONE_NUMBER_ID),
-        "twilio_sms": live(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM),
+        "twilio_sms": live(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) and bool(TWILIO_WHATSAPP_FROM or TWILIO_FROM),
         "surrealdb": live(SURREAL_URL),
         "bedrock": live(BEDROCK_MODEL_ID),
         "arize": live(ARIZE_SPACE_ID, ARIZE_API_KEY),
