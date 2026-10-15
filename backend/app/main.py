@@ -5,6 +5,7 @@
   GET  /cases, /cases/{id}     case state
   POST /cases/{id}/key         Daniel's second key: {"decision": "approve"|"decline"}
   POST /webhooks/elevenlabs    ElevenLabs post-call webhook (optional; polling also works)
+  GET  /help/{id}              the help voice note as a shareable page
   GET  /family, POST /family   setup screen
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
   POST /demo/{link|family|money}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
@@ -22,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from . import bus, calls, config, pipeline, tracing
 from .graph import graph
 from .memory import memory
+from .help_page import render as render_help
 
 ROOT = Path(__file__).resolve().parent.parent
 app = FastAPI(title="Guardian")
@@ -161,6 +163,17 @@ async def el_webhook(request: Request):
     # TODO before Friday if you expose this publicly: verify the ElevenLabs-Signature HMAC header.
     calls.resolve_from_webhook(await request.json())
     return {"ok": True}
+
+
+@app.get("/help/{case_id}")
+async def help_page(case_id: str):
+    """The protected member's shareable story (opened from the text on any phone)."""
+    c = pipeline.cases.get(case_id)
+    h = (c or {}).get("help")
+    if not h:
+        return Response("Not ready yet.", 404, media_type="text/plain")
+    audio = (config.PUBLIC_BASE_URL.rstrip("/") + h["audio_url"]) if h.get("audio_url") else None
+    return Response(render_help(c, h["name"], h["title"], h["steps"], audio, c["lang"]), media_type="text/html; charset=utf-8")
 
 
 @app.get("/family")

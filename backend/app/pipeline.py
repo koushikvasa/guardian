@@ -76,6 +76,9 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
         sender = graph.sender_context(original_sender or "", protected["id"]) if original_sender else {"saved": False, "trusted": False}
         case["sender"] = {k: v for k, v in sender.items() if k != "person"}
 
+        # Memory recall runs alongside the sandbox so it never delays the call (the text already holds the link/claim)
+        recall_task = asyncio.create_task(asyncio.to_thread(memory.recall_for_case, case, None))
+
         det = None
         if signals.get("urls"):
             bus.emit("detonation.started", case_id, url=signals["urls"][0])
@@ -84,7 +87,11 @@ async def handle_message(from_phone: str, body: str, original_sender: str | None
             bus.emit("detonation.result", case_id, **det)
 
         # What Guardian remembers about this link / sender / story (typed facts + retrieval trace)
-        recalled = await asyncio.to_thread(memory.recall_for_case, case, det)
+        try:
+            recalled = await asyncio.wait_for(recall_task, timeout=config.MEMORY_RECALL_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            recalled = {"hits": [], "trace_id": None, "tier": "timeout"}
+            bus.emit("memory.error", case_id, op="recall", error=f"timed out after {config.MEMORY_RECALL_TIMEOUT_S}s")
         prior = memory.prior_scam(recalled["hits"], signals, det, original_sender, sender)
         case["memory"] = {**recalled, "prior_scam": prior}
         bus.emit("memory.recalled", case_id, **case["memory"])
@@ -299,8 +306,9 @@ async def help_note(case, protected):
     money = case.get("money", {}).get("amount")
     steps = _story_steps(case, lang, money)
     audio = await _tts(" ".join(steps), case["id"], lang)
-    link = f"{config.UI_BASE_URL}/rosa/help/{case['id']}"
-    bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=_help_title(lang, money))
+    link = f"{config.PUBLIC_BASE_URL.rstrip('/')}/help/{case['id']}"
+    case["help"] = {"title": _help_title(lang, money), "steps": steps, "audio_url": audio, "name": protected["name"]}
+    bus.emit("help.note.ready", case["id"], steps=steps, audio_url=audio, title=case["help"]["title"], link=link)
     await _sms(case, protected["phone"], t("help_note", lang, link=link))
 
 

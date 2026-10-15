@@ -81,7 +81,7 @@ class Memory:
             out: dict = {"hits": [], "trace_id": None, "tier": None}
             if self.live:
                 try:
-                    r = httpx.post(self._base() + "/query", headers=self._h(), timeout=25,
+                    r = httpx.post(self._base() + "/query", headers=self._h(), timeout=config.MEMORY_RECALL_TIMEOUT_S + 2,
                                    json={"query": query[:600], "lens": [self.scope]})
                     r.raise_for_status()
                     d = r.json()

@@ -69,6 +69,7 @@ PHOENIX_PROJECT = _get("PHOENIX_PROJECT", "guardian")
 SURREAL_MEMORY_URL = _get("SURREAL_MEMORY_URL")  # context host, e.g. https://xxxx.agent-memory.surrealdb.com
 SURREAL_MEMORY_KEY = _get("SURREAL_MEMORY_KEY")  # sp-...
 SURREAL_MEMORY_CONTEXT = _get("SURREAL_MEMORY_CONTEXT")
+MEMORY_RECALL_TIMEOUT_S = float(_get("MEMORY_RECALL_TIMEOUT_S", "8"))  # recall never holds up the call longer than this
 
 # --- Mock behaviour (for rehearsal without phones) ---
 MOCK_VERIFY_OUTCOME = _get("MOCK_VERIFY_OUTCOME", "denied")  # denied | confirmed | no_answer

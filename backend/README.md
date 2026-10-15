@@ -57,7 +57,8 @@ mock_sites/keystone  the ONLY page ever detonated on stage (fictional bank, form
 `case.opened` · `sms.in` · `sms.out` · `signals` · `detonation.started` · `detonation.result` · `verdict` ·
 `money.locked` · `key.decision` · `call.{warning|verify|second_key}.{dialing|connected|transcript|ended}` ·
 `verify.outcome` · `teachback` · `help.note.ready` · `herd.recorded` · `eval.live` · `case.closed` ·
-`memory.recalled` `{hits:[{text,when,score}], trace_id, tier, prior_scam:{what,date}|null}` · `memory.remembered` `{text, entities}`
+`memory.recalled` `{hits:[{text,when,score}], trace_id, tier, prior_scam:{what,date}|null}` · `memory.remembered` `{text, entities}` ·
+`help.note.ready` also carries `link` (the public `GET /help/{id}` page served by the backend)
 
 Every event is also appended to `data/events.log.jsonl`. That file is the stage backup: replay it into the UI if the network dies.
 
