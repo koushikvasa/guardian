@@ -10,6 +10,7 @@
   GET  /family, POST /family   the family page (phones masked; POST edits phrases, languages, threshold only)
   GET  /memory?q=              what Guardian remembers, with the retrieval trace
   GET  /memory/graph           the same as nodes and edges for the family page
+  POST /mode                   {"mode": "demo"|"live"}: demo = UI beats are rehearsals; live = real calls and texts
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
   POST /demo/{link|family|money|support}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
   GET  /health                 which sponsors are live vs mock
@@ -79,9 +80,20 @@ async def startup():
     print("[guardian] sponsors live:", json.dumps(config.status()))
 
 
+@app.post("/mode")
+async def set_mode(payload: dict):
+    """Demo mode: every beat from the UI is a rehearsal (no texts, calls or sandboxes). Live mode: beats are real."""
+    mode = (payload.get("mode") or "").lower()
+    if mode not in ("demo", "live"):
+        return JSONResponse({"error": "mode must be demo or live"}, 400)
+    config.DEMO_LIVE = mode == "live"
+    bus.emit("mode", None, mode=mode)
+    return {"ok": True, "mode": mode}
+
+
 @app.get("/health")
 async def health():
-    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK, "texts": sms.budget(), "demo_live": config.DEMO_LIVE}
+    return {"ok": True, "live": config.status(), "mock_forced": config.FORCE_MOCK, "texts": sms.budget(), "demo_live": config.DEMO_LIVE, "mode": "live" if config.DEMO_LIVE else "demo"}
 
 
 @app.post("/sms")

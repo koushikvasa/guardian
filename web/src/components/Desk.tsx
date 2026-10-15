@@ -5,7 +5,7 @@ import { Mark, Mood, Look } from "./Mark";
 import { Hero } from "./Hero";
 
 const LABEL: Record<string, string> = { scam: "SCAM", suspicious: "SUSPICIOUS", safe: "SAFE" };
-const LABEL_COLOR: Record<string, string> = { scam: "var(--danger)", suspicious: "#6B4A10", safe: "var(--ok)" };
+const LABEL_COLOR: Record<string, string> = { scam: "var(--danger)", suspicious: "var(--gold-text)", safe: "var(--ok)" };
 const ENDED = ["completed", "no_answer", "failed"];
 
 type StepKey = "recv" | "check" | "verdict" | "call" | "teach" | "help" | "rem";
@@ -143,7 +143,7 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
         {head(c.status === "closed" ? "What didn't add up" : "Verdict")}
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span className={`stamp${stampOn ? " show" : ""}`} style={{ borderColor: LABEL_COLOR[v.label], color: LABEL_COLOR[v.label], margin: 0 }}>{LABEL[v.label]} · {v.score}</span>
-          {c.money && <span className="pill" style={{ background: c.money.state === "locked" ? "#F6E7C5" : c.money.state === "declined" ? "#FCE4E2" : "#DDF3EA", color: c.money.state === "locked" ? "#6B4A10" : c.money.state === "declined" ? "#8C1D18" : "var(--ok)" }}>${c.money.amount.toLocaleString()} · {c.money.state === "locked" ? "locked, waiting for Daniel's key" : c.money.state === "declined" ? "stopped by Daniel" : "approved by Daniel"}</span>}
+          {c.money && <span className="pill" style={{ background: c.money.state === "locked" ? "var(--gold-soft)" : c.money.state === "declined" ? "var(--danger-soft)" : "var(--ok-soft)", color: c.money.state === "locked" ? "var(--gold-text)" : c.money.state === "declined" ? "var(--danger-text)" : "var(--ok)" }}>${c.money.amount.toLocaleString()} · {c.money.state === "locked" ? "locked, waiting for Daniel's key" : c.money.state === "declined" ? "stopped by Daniel" : "approved by Daniel"}</span>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
           {v.fired.filter((f) => f.weight > 0 && f.rule !== "remembered_scam").slice(0, 4).map((f, i) => (
@@ -160,7 +160,7 @@ function focus(c: CaseState, now: StepKey | undefined, stampOn: boolean) {
             </>
           );
         })()}
-        {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "#E4E8F1" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
+        {c.status === "closed" && c.evals && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "var(--ok-soft)" : "var(--danger-soft)" }}>Arize · {k.replace("_", " ")} {ok ? "✓" : "✗"}</span>)}{c.teachback != null && <span className="pill" style={{ background: "var(--chip)" }}>teach-back {c.teachback ? "passed" : "repeated"}</span>}</div>}
       </>
     );
   }

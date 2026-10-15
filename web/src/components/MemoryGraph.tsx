@@ -27,10 +27,10 @@ export function MemoryGraph({ compact = false }: { compact?: boolean }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="What Guardian knows, as a graph">
-        {[1, 2, 3].map((r) => <circle key={r} cx={cx} cy={cy} r={radius[r]} fill="none" stroke="#D5DAE6" strokeDasharray={r === 1 ? undefined : "4 6"} />)}
-        <text x={cx} y={cy - radius[1] - 10} textAnchor="middle" fontSize="11" fill="#4A5170" fontFamily="Figtree, sans-serif" letterSpacing=".08em">FAMILY</text>
-        <text x={cx} y={cy - radius[2] - 10} textAnchor="middle" fontSize="11" fill="#4A5170" fontFamily="Figtree, sans-serif" letterSpacing=".08em">SEEN · REMEMBERED</text>
-        <text x={cx} y={cy - radius[3] - 10} textAnchor="middle" fontSize="11" fill="#4A5170" fontFamily="Figtree, sans-serif" letterSpacing=".08em">SCAM KNOWLEDGE</text>
+        {[1, 2, 3].map((r) => <circle key={r} cx={cx} cy={cy} r={radius[r]} fill="none" stroke="var(--line)" strokeDasharray={r === 1 ? undefined : "4 6"} />)}
+        <text x={cx} y={cy - radius[1] - 10} textAnchor="middle" fontSize="11" fill="var(--muted)" fontFamily="Figtree, sans-serif" letterSpacing=".08em">FAMILY</text>
+        <text x={cx} y={cy - radius[2] - 10} textAnchor="middle" fontSize="11" fill="var(--muted)" fontFamily="Figtree, sans-serif" letterSpacing=".08em">SEEN · REMEMBERED</text>
+        <text x={cx} y={cy - radius[3] - 10} textAnchor="middle" fontSize="11" fill="var(--muted)" fontFamily="Figtree, sans-serif" letterSpacing=".08em">SCAM KNOWLEDGE</text>
         {g?.edges.map((e, i) => { const a = pos.get(e.from), b = pos.get(e.to); if (!a || !b) return null; const dim = hover && !(hover === e.from || hover === e.to); return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={e.scam ? "#D7322A" : "#9EB0FF"} strokeWidth={hover && !dim ? 3 : 1.5} strokeDasharray={e.scam ? undefined : "5 5"} opacity={dim ? 0.15 : 0.8} />; })}
         {g?.nodes.map((n) => {
           const p = pos.get(n.id); if (!p) return null;
@@ -39,17 +39,17 @@ export function MemoryGraph({ compact = false }: { compact?: boolean }) {
           return (
             <g key={n.id} transform={`translate(${p.x} ${p.y})`} opacity={dim ? 0.25 : 1} onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)} style={{ cursor: "default" }}>
               <title>{n.detail || n.label}{n.when ? ` · ${n.when}` : ""}</title>
-              <circle r={r} fill={n.kind === "sender" || n.kind === "domain" || n.kind === "story" ? "#F7E9E8" : n.kind === "brand" || n.kind === "knowledge" ? "#E9ECF3" : FILL[n.kind]} stroke={FILL[n.kind]} strokeWidth={2} strokeDasharray={n.kind === "sender" ? "4 3" : undefined} />
+              <circle r={r} fill={n.kind === "sender" || n.kind === "domain" || n.kind === "story" ? "var(--danger-soft)" : n.kind === "brand" || n.kind === "knowledge" ? "var(--chip)" : FILL[n.kind]} stroke={FILL[n.kind]} strokeWidth={2} strokeDasharray={n.kind === "sender" ? "4 3" : undefined} />
               {(n.kind === "member" || n.kind === "guardian") && <text y="7" textAnchor="middle" fontSize="20" fill="#fff" fontFamily="'Young Serif', serif">{n.label[0]}</text>}
-              <text y={r + 14} textAnchor="middle" fontSize={n.kind === "brand" || n.kind === "knowledge" ? 10.5 : 12} fill="#161B33" fontFamily="Figtree, sans-serif" fontWeight={n.kind === "member" || n.kind === "guardian" ? 700 : 500}>{n.label.length > 26 ? n.label.slice(0, 25) + "…" : n.label}</text>
+              <text y={r + 14} textAnchor="middle" fontSize={n.kind === "brand" || n.kind === "knowledge" ? 10.5 : 12} fill="var(--fg)" fontFamily="Figtree, sans-serif" fontWeight={n.kind === "member" || n.kind === "guardian" ? 700 : 500}>{n.label.length > 26 ? n.label.slice(0, 25) + "…" : n.label}</text>
             </g>
           );
         })}
       </svg>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "var(--muted)", alignItems: "center" }}>
         <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#2E46E5", marginRight: 6 }} />family</span>
-        <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#F7E9E8", border: "2px solid #D7322A", marginRight: 6 }} />seen and judged a scam</span>
-        <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#E9ECF3", border: "2px solid #4A5170", marginRight: 6 }} />knowledge Guardian was given</span>
+        <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--danger-soft)", border: "2px solid #D7322A", marginRight: 6 }} />seen and judged a scam</span>
+        <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--chip)", border: "2px solid #4A5170", marginRight: 6 }} />knowledge Guardian was given</span>
         {g && <span style={{ marginLeft: "auto" }}>SurrealDB Agent Memory{g.tier ? ` · ${g.tier}` : ""}{g.trace_id ? ` · trace ${g.trace_id}` : ""}</span>}
       </div>
     </div>

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Brand } from "@/components/Mark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { MemoryGraph } from "@/components/MemoryGraph";
 import { TraceDrawer } from "@/components/TraceDrawer";
 import { API, CaseState, LANG_NAME, useGuardian } from "@/lib/guardian";
@@ -39,8 +40,9 @@ export default function FamilyPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Brand size={60} href="/" />
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/stage" className="pill" style={{ background: "var(--ink)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
-          <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "offline"}</span>
+          <ThemeToggle />
+          <Link href="/stage" className="pill" style={{ background: "var(--dark)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
+          <span className="pill" style={{ background: g.connected ? "var(--ok-soft)" : "var(--danger-soft)", color: g.connected ? "var(--ok)" : "var(--danger-text)" }}>{g.connected ? "live" : "offline"}</span>
         </div>
       </div>
 
@@ -56,12 +58,12 @@ export default function FamilyPage() {
           <div key={m.id} className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div className="serif" style={{ fontSize: 30 }}>{m.name}</div>
-              <span className="pill" style={{ background: "#E4E8F1" }}>protected · {LANG_NAME[m.lang] || m.lang}</span>
+              <span className="pill" style={{ background: "var(--chip)" }}>protected · {LANG_NAME[m.lang] || m.lang}</span>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); const v = (new FormData(e.currentTarget).get("phrase") as string).trim(); if (v && v !== (m.safe_phrase || "")) patch({ members: [{ id: m.id, safe_phrase: v }] }, m.id); }} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label htmlFor={`phrase-${m.id}`} style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Family phrase</label>
               <div style={{ display: "flex", gap: 8 }}>
-                <input id={`phrase-${m.id}`} name="phrase" defaultValue={m.safe_phrase || ""} style={{ flex: 1, minWidth: 0, font: "inherit", fontSize: 18, fontWeight: 600, color: "var(--ink)", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff" }} />
+                <input id={`phrase-${m.id}`} name="phrase" defaultValue={m.safe_phrase || ""} style={{ flex: 1, minWidth: 0, font: "inherit", fontSize: 18, fontWeight: 600, color: "var(--fg)", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "var(--card)" }} />
                 <button className="btn btn-dark" type="submit" style={{ minHeight: 44, padding: "0 16px" }}>{saving === m.id ? "Saving…" : "Save"}</button>
               </div>
               {saved === m.id && <div style={{ fontSize: 13, color: "var(--ok)", fontWeight: 600 }}>Saved. Guardian says this at the start of every call to {m.name}.</div>}
@@ -78,7 +80,7 @@ export default function FamilyPage() {
           <div key={m.id} className="card" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div className="serif" style={{ fontSize: 26 }}>{m.name}</div>
-              <span className="pill" style={{ background: m.role === "guardian" ? "#F6E7C5" : "#E4E8F1", color: m.role === "guardian" ? "#6B4A10" : "inherit" }}>{m.role === "guardian" ? "guardian · holds the second key" : "family member"}</span>
+              <span className="pill" style={{ background: m.role === "guardian" ? "var(--gold-soft)" : "var(--chip)", color: m.role === "guardian" ? "var(--gold-text)" : "inherit" }}>{m.role === "guardian" ? "guardian · holds the second key" : "family member"}</span>
             </div>
             <div style={{ fontSize: 14, color: "var(--muted)" }}>{LANG_NAME[m.lang] || m.lang} · phone {m.phone}{m.whatsapp ? ` · WhatsApp ${m.whatsapp}` : ""}</div>
             {m.role === "guardian" && <div style={{ fontSize: 14 }}>Guardian calls {m.name} on this saved number whenever someone claims to be family, and whenever money above the threshold is requested. Only {m.name}&rsquo;s press-and-hold can approve a payment.</div>}
@@ -89,7 +91,7 @@ export default function FamilyPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="serif" style={{ fontSize: 30 }}>$</span>
             <input id="threshold" type="number" min={0} step={50} defaultValue={fam?.second_key_threshold_usd ?? 500} onBlur={(e) => { const v = Number(e.target.value); if (fam && v !== fam.second_key_threshold_usd) patch({ second_key_threshold_usd: v }, "threshold"); }}
-              style={{ font: "inherit", fontSize: 28, fontFamily: "'Young Serif', serif", width: 160, padding: "6px 10px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff", color: "var(--ink)" }} />
+              style={{ font: "inherit", fontSize: 28, fontFamily: "'Young Serif', serif", width: 160, padding: "6px 10px", border: "1px solid var(--line)", borderRadius: 12, background: "var(--card)", color: "var(--fg)" }} />
             {saving === "threshold" && <span style={{ fontSize: 13, color: "var(--ok)" }}>Saved.</span>}
           </div>
           <div style={{ fontSize: 14, color: "var(--muted)" }}>Any request above this is locked until Daniel turns the key. Guardian itself never approves, and there is no timeout.</div>
@@ -112,7 +114,7 @@ export default function FamilyPage() {
           {cases.length === 0 && <div style={{ color: "var(--muted)", fontSize: 15 }}>No cases yet. They appear here as they happen.</div>}
           {cases.slice(0, 8).map((c) => (
             <div key={c.id} onClick={() => setTraceFor(c)} title="Open the trace" style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", fontSize: 15, borderTop: "1px solid var(--line)", paddingTop: 8, cursor: "pointer" }}>
-              <span className="pill" style={{ background: c.verdict?.label === "scam" ? "#FCE4E2" : c.verdict?.label === "suspicious" ? "#FFF3D6" : "#DDF3EA", color: c.verdict?.label === "scam" ? "#8C1D18" : c.verdict?.label === "suspicious" ? "#6B4A10" : "var(--ok)" }}>{c.verdict?.label || "checking"}</span>
+              <span className="pill" style={{ background: c.verdict?.label === "scam" ? "var(--danger-soft)" : c.verdict?.label === "suspicious" ? "var(--warn-soft)" : "var(--ok-soft)", color: c.verdict?.label === "scam" ? "var(--danger-text)" : c.verdict?.label === "suspicious" ? "var(--gold-text)" : "var(--ok)" }}>{c.verdict?.label || "checking"}</span>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><b>{c.protected}</b> · {c.text}</span>
               <span style={{ color: "var(--muted)", fontSize: 13 }}>{c.money ? `$${c.money.amount.toLocaleString()} ${c.money.state}` : c.timeToCall != null ? `call in ${c.timeToCall}s` : ""}</span>
             </div>
@@ -121,15 +123,15 @@ export default function FamilyPage() {
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>What Guardian remembers</div>
           <form onSubmit={(e) => { e.preventDefault(); ask(q); }} style={{ display: "flex", gap: 8 }}>
-            <input id="memq" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, font: "inherit", padding: "9px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff", color: "var(--ink)", minWidth: 0 }} />
+            <input id="memq" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, font: "inherit", padding: "9px 12px", border: "1px solid var(--line)", borderRadius: 12, background: "var(--card)", color: "var(--fg)", minWidth: 0 }} />
             <button className="btn btn-dark" type="submit" style={{ minHeight: 42 }}>{asking ? "…" : "Ask"}</button>
           </form>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["What does Guardian know about Daniel?", "Which links were scams?", "How does the Microsoft scam work?", "Why are gift cards a scam?"].map((s) => <button key={s} type="button" className="pill" onClick={() => { setQ(s); ask(s); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>{s}</button>)}
+            {["What does Guardian know about Daniel?", "Which links were scams?", "How does the Microsoft scam work?", "Why are gift cards a scam?"].map((s) => <button key={s} type="button" className="pill" onClick={() => { setQ(s); ask(s); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "var(--card)" }}>{s}</button>)}
           </div>
           {mem && mem.hits.length === 0 && <div style={{ color: "var(--muted)", fontSize: 15 }}>Nothing yet for that question.</div>}
           {mem?.hits.slice(0, 5).map((h, i) => (
-            <div key={i} style={{ fontSize: 15, lineHeight: 1.4, borderTop: "1px solid var(--line)", paddingTop: 8 }}><span className="pill" style={{ background: h.kind === "knowledge" ? "#E4E8F1" : "#DCE2FF", marginRight: 8, fontSize: 11 }}>{h.kind === "knowledge" ? "knows" : h.when}</span>{h.text.replace(/^Scam knowledge: /, "")}</div>
+            <div key={i} style={{ fontSize: 15, lineHeight: 1.4, borderTop: "1px solid var(--line)", paddingTop: 8 }}><span className="pill" style={{ background: h.kind === "knowledge" ? "var(--chip)" : "var(--soft)", marginRight: 8, fontSize: 11 }}>{h.kind === "knowledge" ? "knows" : h.when}</span>{h.text.replace(/^Scam knowledge: /, "")}</div>
           ))}
           {mem && <div style={{ fontSize: 12, color: "var(--muted)" }}>SurrealDB Agent Memory · {mem.tier || "mock"}{mem.trace_id ? ` · trace ${mem.trace_id}` : ""}</div>}
         </div>

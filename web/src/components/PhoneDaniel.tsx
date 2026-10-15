@@ -30,7 +30,7 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
         {mine.length === 0 && <div className="msg g" style={{ opacity: 0.6 }}><span className="k">Guardian</span>Nothing needs you.</div>}
         {mine.map((m, i) => <div key={i} className="msg g alert" style={m.delivered === false ? { opacity: 0.55 } : undefined}><span className="k">Guardian</span>{String(m.body ?? "").replace(/^Guardian: /, "")}</div>)}
         {call && (
-          <div className="msg" style={{ alignSelf: "stretch", maxWidth: "100%", background: "var(--ink)", color: "#fff" }}>
+          <div className="msg" style={{ alignSelf: "stretch", maxWidth: "100%", background: "var(--dark)", color: "#fff" }}>
             <span className="k" style={{ color: "#B9C0DA" }}>{callKey === "verify" ? "Guardian is calling you" : "Guardian is calling you about the money"}{live ? " · on the line" : ""}</span>
             {live && call.lines.length === 0 && <div className="wave" aria-hidden="true">{Array.from({ length: 14 }).map((_, i) => <i key={i} />)}</div>}
             {call.lines.slice(-3).map((l, i) => <div key={i} className="serif" style={{ fontSize: 15, marginTop: 4, color: l.role === "user" ? "#9EB0FF" : "#fff" }}>{l.text}</div>)}
@@ -56,7 +56,7 @@ export const PhoneDaniel = forwardRef<HTMLDivElement, { c: CaseState | undefined
               <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
                 <button className="btn btn-dark" style={{ minHeight: 48, fontSize: 16 }} onClick={() => c && turnKey(c.id, "decline")}>Don&rsquo;t send it</button>
                 <button className="btn" onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
-                  style={{ minHeight: 46, border: "2px solid var(--gold)", color: "#6B4A10", background: `linear-gradient(90deg, #F6E7C5 ${held * 100}%, transparent ${held * 100}%)`, touchAction: "none" }}>
+                  style={{ minHeight: 46, border: "2px solid var(--gold)", color: "var(--gold-text)", background: `linear-gradient(90deg, var(--gold-soft) ${held * 100}%, transparent ${held * 100}%)`, touchAction: "none" }}>
                   Press and hold to approve
                 </button>
               </div>

@@ -5,6 +5,8 @@ import { Desk, mainCall } from "@/components/Desk";
 import { PhoneAmma } from "@/components/PhoneAmma";
 import { PhoneDaniel } from "@/components/PhoneDaniel";
 import { TraceDrawer } from "@/components/TraceDrawer";
+import { ModeSwitch } from "@/components/ModeSwitch";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { API, Beat, CaseState, fireDemo, GEvent, Lang, LANG_NAME, useGuardian, useHealth } from "@/lib/guardian";
 
 const DEFAULT_NAME: Record<Lang, string> = { en: "Jasmine", te: "Amma", es: "Rosa" };
@@ -35,7 +37,8 @@ export default function Stage() {
   const health = useHealth();
   const [lang, setLang] = useState<Lang>("en");
   const [sel, setSel] = useState<string | null>(null);
-  const [dry, setDry] = useState(true);
+  const [mode, setMode] = useState<"demo" | "live" | null>(null);
+  const dry = mode !== "live";  // demo = rehearsal beats; live = real texts and calls
   const [panel, setPanel] = useState(false);
   const [trace, setTrace] = useState(false);
   const [fit, setFit] = useState({ scale: 1, left: 0, top: 0, h: CANVAS_H });
@@ -66,11 +69,9 @@ export default function Stage() {
   const stage = useRef<HTMLDivElement>(null), pA = useRef<HTMLDivElement>(null), pD = useRef<HTMLDivElement>(null), desk = useRef<HTMLDivElement>(null);
   const showD = needsDaniel(c);
 
-  useEffect(() => { try { setDry(localStorage.getItem("guardian.dry") !== "0"); } catch {} }, []);
-  const toggleDry = () => { setDry((d) => { try { localStorage.setItem("guardian.dry", d ? "0" : "1"); } catch {} return !d; }); };
   useEffect(() => { setSel(null); }, [g.order.length]);
   useEffect(() => {
-    const tick = () => fetch(`${API}/health`).then((r) => r.json()).then((h) => setTexts(h.texts)).catch(() => {});
+    const tick = () => fetch(`${API}/health`).then((r) => r.json()).then((h) => { setTexts(h.texts); setMode(h.mode === "live" ? "live" : "demo"); }).catch(() => {});
     tick(); const id = setInterval(tick, 8000); return () => clearInterval(id);
   }, []);
   const fire = useCallback((b: Beat) => fireDemo(b, lang, dry), [lang, dry]);
@@ -79,7 +80,7 @@ export default function Stage() {
       if ((e.target as HTMLElement)?.tagName === "INPUT") return;
       const beat = BEATS.find((b) => b.hot === e.key); if (beat) fire(beat.key);
       if (e.key.toLowerCase() === "l") pickLang(lang === "en" ? "te" : lang === "te" ? "es" : "en");
-      if (e.key.toLowerCase() === "r") toggleDry();
+      if (e.key.toLowerCase() === "r") document.getElementById("modeswitch")?.querySelector("button")?.click();
       if (e.key.toLowerCase() === "p") setPanel((v) => !v);
       if (e.key.toLowerCase() === "t") setTrace((v) => !v);
       if (e.key === "Escape") { setPanel(false); setTrace(false); }
@@ -128,6 +129,7 @@ export default function Stage() {
     if (!c.verdict) return { x: -1, y: 0.3 };
     return null;
   }, [c]);
+  useEffect(() => { if (g.last?.kind === "mode") setMode((g.last.mode as "demo" | "live") || "demo"); }, [g.last]);
   const sponsors = lit(c, health);
 
   return (
@@ -137,14 +139,11 @@ export default function Stage() {
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Brand size={56} /></button>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          {c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{c.id} · {c.protected} · {LANG_NAME[c.lang || "en"]}</span>}
-          {!c && <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[lang]} · {LANG_NAME[lang]}</span>}
-          {health?.demo_live ? (
-            <button className="pill" onClick={toggleDry} title="R: rehearsal, no texts or calls" style={{ cursor: "pointer", border: "1px solid var(--line)", background: dry ? "#fff" : "#FCE4E2", color: dry ? "var(--muted)" : "#8C1D18", fontWeight: 700 }}>{dry ? "rehearsal" : "LIVE"}</button>
-          ) : (
-            <span className="pill" title="DEMO_LIVE=0: every beat is a rehearsal" style={{ background: "#fff", border: "1px solid var(--line)", color: "var(--muted)" }}>rehearsal</span>
-          )}
-          <span className="pill" style={{ background: g.connected ? "#DDF3EA" : "#FCE4E2", color: g.connected ? "var(--ok)" : "#8C1D18" }}>{g.connected ? "live" : "reconnecting"}</span>
+          {c && <span className="pill" style={{ background: "var(--card)", border: "1px solid var(--line)" }}>{c.id} · {c.protected} · {LANG_NAME[c.lang || "en"]}</span>}
+          {!c && <span className="pill" style={{ background: "var(--card)", border: "1px solid var(--line)" }}>{PROTECTED[lang]} · {LANG_NAME[lang]}</span>}
+          <span id="modeswitch"><ModeSwitch mode={mode} onChange={setMode} /></span>
+          <ThemeToggle />
+          <span className="pill" style={{ background: g.connected ? "var(--ok-soft)" : "var(--danger-soft)", color: g.connected ? "var(--ok)" : "var(--danger-text)" }}>{g.connected ? "connected" : "reconnecting"}</span>
         </div>
       </div>
 
@@ -154,19 +153,19 @@ export default function Stage() {
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Demo as</span>
             {(["en", "te", "es"] as Lang[]).map((l) => (
-              <button key={l} className="pill" onClick={() => pickLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
+              <button key={l} className="pill" onClick={() => pickLang(l)} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "var(--card)", color: lang === l ? "#fff" : "var(--fg)" }}>{PROTECTED[l]} · {LANG_NAME[l]}</button>
             ))}
             <span style={{ width: 12 }} />
-            {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => { fire(b.key); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
+            {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => { fire(b.key); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "var(--card)" }}><b style={{ color: "var(--accent)" }}>{b.hot}</b> {b.label}</button>)}
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Today</span>
             {g.order.slice(-6).reverse().map((id) => {
               const x = g.cases[id]; const on = c?.id === id;
-              return <button key={id} className="pill" onClick={() => { setSel(id); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)" }}>{id} · {x.protected || "?"}{x.verdict ? ` · ${x.verdict.label}` : ""}</button>;
+              return <button key={id} className="pill" onClick={() => { setSel(id); setPanel(false); }} style={{ cursor: "pointer", border: "1px solid var(--line)", background: on ? "var(--ink)" : "var(--card)", color: on ? "#fff" : "var(--fg)" }}>{id} · {x.protected || "?"}{x.verdict ? ` · ${x.verdict.label}` : ""}</button>;
             })}
             {g.order.length === 0 && <span style={{ color: "var(--muted)", fontSize: 14 }}>no cases yet</span>}
-            <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>keys: 1–4 beats · L language · P this panel{health?.demo_live ? " · R rehearsal" : ""}</span>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--muted)" }}>keys: 1–4 beats · L language · P this panel · R demo/live · T trace</span>
           </div>
         </div>
       )}
@@ -184,10 +183,10 @@ export default function Stage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 760 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}><Mark size={96} mood="idle" /><div className="serif" style={{ fontSize: 26 }}>Watching. Nothing to do.</div></div>
             <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.06, margin: 0 }}>{PROTECTED[lang]} doesn&rsquo;t forward anything. Her phone does, and her family answers.</h1>
-            <p style={{ fontSize: 19, color: "var(--muted)", margin: 0, lineHeight: 1.45 }}>Text {PROTECTED[lang]}&rsquo;s phone from any number, or press <b>1</b>–<b>4</b> to fire a beat in {LANG_NAME[lang]}. <b>L</b> switches the family member, <b>P</b> opens the presenter panel.</p>
+            <p style={{ fontSize: 19, color: "var(--muted)", margin: 0, lineHeight: 1.45 }}>Text {PROTECTED[lang]}&rsquo;s phone from any number, or press <b>1</b>–<b>4</b> to fire a beat in {LANG_NAME[lang]}. <b>L</b> switches the family member, <b>P</b> opens the presenter panel, <b>R</b> switches demo and live.</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {(["te", "en", "es"] as Lang[]).map((l) => <span key={l} className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>{PROTECTED[l]} · {LANG_NAME[l]}{phraseFor(l) ? ` · “${phraseFor(l)}”` : ""}</span>)}
-              <span className="pill" style={{ background: "#fff", border: "1px solid var(--line)" }}>Daniel · guardian · holds the second key</span>
+              {(["te", "en", "es"] as Lang[]).map((l) => <span key={l} className="pill" style={{ background: "var(--card)", border: "1px solid var(--line)" }}>{PROTECTED[l]} · {LANG_NAME[l]}{phraseFor(l) ? ` · “${phraseFor(l)}”` : ""}</span>)}
+              <span className="pill" style={{ background: "var(--card)", border: "1px solid var(--line)" }}>Daniel · guardian · holds the second key</span>
             </div>
           </div>
         )}
@@ -203,17 +202,17 @@ export default function Stage() {
       {/* rail */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, borderTop: "1px solid var(--line)", paddingTop: 10, flexWrap: "nowrap", minWidth: 0 }}>
         <div className="sp" style={{ display: "flex", gap: 6, flexWrap: "nowrap", minWidth: 0, overflow: "hidden" }}>
-          {SPONSORS.map((s) => <span key={s} className={`pill${sponsors.has(s) ? " lit" : ""}`} style={{ background: sponsors.has(s) ? undefined : "#F3F4F8" }}>{s}</span>)}
-          {c?.timeToCall != null && <span className="pill" style={{ background: "#E4E8F1" }}>first call in {c.timeToCall}s</span>}
+          {SPONSORS.map((s) => <span key={s} className={`pill${sponsors.has(s) ? " lit" : ""}`} style={{ background: sponsors.has(s) ? undefined : "var(--chip2)" }}>{s}</span>)}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap", flexShrink: 0 }}>
           {(["te", "en", "es"] as Lang[]).map((l) => (
-            <button key={l} className="pill" onClick={() => pickLang(l)} title={LANG_NAME[l]} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "#fff", color: lang === l ? "#fff" : "var(--ink)", fontSize: 14 }}>{PROTECTED[l]}</button>
+            <button key={l} className="pill" onClick={() => pickLang(l)} title={LANG_NAME[l]} style={{ cursor: "pointer", border: "1px solid var(--line)", background: lang === l ? "var(--ink)" : "var(--card)", color: lang === l ? "#fff" : "var(--fg)", fontSize: 14 }}>{PROTECTED[l]}</button>
           ))}
           <span style={{ width: 4 }} />
-          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff", fontSize: 14 }}>▶ {b.label}</button>)}
-          {texts && texts.budget != null && <span className="pill" style={{ background: "#F3F4F8", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
-          {c && <button className="pill" onClick={() => setTrace((v) => !v)} title="T: trace" style={{ cursor: "pointer", border: "1px solid var(--line)", background: trace ? "var(--ink)" : "#fff", color: trace ? "#fff" : "var(--ink)", fontSize: 14 }}>T · trace</button>}
+          {BEATS.map((b) => <button key={b.key} className="pill" onClick={() => fire(b.key)} title={`press ${b.hot}`} style={{ cursor: "pointer", border: "1px solid var(--line)", background: "var(--card)", fontSize: 14 }}>▶ {b.label}</button>)}
+          {c?.timeToCall != null && <span className="pill" style={{ background: "var(--chip)", whiteSpace: "nowrap" }}>first call in {c.timeToCall}s</span>}
+          {texts && texts.budget != null && <span className="pill" style={{ background: "var(--chip2)", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
+          {c && <button className="pill" onClick={() => setTrace((v) => !v)} title="T: trace" style={{ cursor: "pointer", border: "1px solid var(--line)", background: trace ? "var(--ink)" : "var(--card)", color: trace ? "#fff" : "var(--fg)", fontSize: 14 }}>T · trace</button>}
         </div>
       </div>
       {trace && c && <TraceDrawer c={c} onClose={() => setTrace(false)} />}

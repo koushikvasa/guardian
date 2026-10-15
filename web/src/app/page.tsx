@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Brand, Mark } from "@/components/Mark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Hero } from "@/components/Hero";
 import { CaseState, useHealth } from "@/lib/guardian";
 
@@ -33,8 +34,9 @@ export default function Home() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Brand size={60} />
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/family" className="pill" style={{ background: "#fff", border: "1px solid var(--line)", textDecoration: "none", color: "inherit" }}>Family</Link>
-          <Link href="/stage" className="pill" style={{ background: "var(--ink)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
+          <ThemeToggle />
+          <Link href="/family" className="pill" style={{ background: "var(--card)", border: "1px solid var(--line)", textDecoration: "none", color: "inherit" }}>Family</Link>
+          <Link href="/stage" className="pill" style={{ background: "var(--dark)", color: "#fff", textDecoration: "none" }}>Open the stage</Link>
         </div>
       </div>
 
@@ -63,7 +65,7 @@ export default function Home() {
       <section className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <h2 className="serif" style={{ fontSize: 28, margin: 0 }}>Every case runs the same seven steps.</h2>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {STEPS.map((s, i) => <span key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}><span className="pill" style={{ background: "#E4E8F1" }}>{s}</span>{i < STEPS.length - 1 && <span style={{ color: "var(--line)" }}>—</span>}</span>)}
+          {STEPS.map((s, i) => <span key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}><span className="pill" style={{ background: "var(--chip)" }}>{s}</span>{i < STEPS.length - 1 && <span style={{ color: "var(--line)" }}>—</span>}</span>)}
         </div>
         <p style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.5 }}>Rules decide, not the model. Every reason she hears cites the rule that fired. Guardian never asks for codes, passwords, cards or payments, and a live check on every case proves it. The fourth kind of scam, the “Microsoft” support call, runs the same way from what she tells Guardian in her own words.</p>
       </section>
@@ -71,7 +73,7 @@ export default function Home() {
       <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
           <h2 className="serif" style={{ fontSize: 28, margin: 0 }}>Built on the sponsors, each doing a real job.</h2>
-          {health && <span className="pill" style={{ background: "#DDF3EA", color: "var(--ok)" }}>{live} of {Object.keys(health.live || {}).length} live right now</span>}
+          {health && <span className="pill" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>{live} of {Object.keys(health.live || {}).length} live right now</span>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 12 }}>
           {SPONSORS.map(([n, b]) => <div key={n} className="card" style={{ padding: "14px 16px" }}><div style={{ fontWeight: 700, marginBottom: 4 }}>{n}</div><div style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.45 }}>{b}</div></div>)}

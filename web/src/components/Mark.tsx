@@ -69,8 +69,8 @@ export function Mark({ size = 92, mood = "idle", look = null, tilt = true, title
         </defs>
         <rect className="slot" x="7.5" y="13" width="34" height="16" rx="8" fill="#2E46E5" />
         <rect x="7.5" y="13" width="34" height="16" rx="8" fill={`url(#${id}s)`} />
-        <path d="M15.59 16.5 H21.91 A5.5 5.5 0 0 1 21.91 25.5 H15.59 A5.5 5.5 0 0 1 15.59 16.5 Z" fill="#EEF1F6" />
-        <path d="M27.09 16.5 H33.41 A5.5 5.5 0 0 1 33.41 25.5 H27.09 A5.5 5.5 0 0 1 27.09 16.5 Z" fill="#EEF1F6" />
+        <path d="M15.59 16.5 H21.91 A5.5 5.5 0 0 1 21.91 25.5 H15.59 A5.5 5.5 0 0 1 15.59 16.5 Z" fill="var(--eye)" />
+        <path d="M27.09 16.5 H33.41 A5.5 5.5 0 0 1 33.41 25.5 H27.09 A5.5 5.5 0 0 1 27.09 16.5 Z" fill="var(--eye)" />
         <g clipPath={`url(#${id}L)`}><circle className="p" cx="18.75" cy="21" r="2.3" fill="#2E46E5" /><circle className="h" cx="19.5" cy="20.2" r=".6" fill="#fff" /></g>
         <g clipPath={`url(#${id}R)`}><circle className="p" cx="30.25" cy="21" r="2.3" fill="#2E46E5" /><circle className="h" cx="31" cy="20.2" r=".6" fill="#fff" /></g>
         <g clipPath={`url(#${id}L)`}><rect className="lid" x="15" y="4" width="8" height="9.6" fill="#2E46E5" /></g>

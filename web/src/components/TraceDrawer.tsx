@@ -4,7 +4,7 @@ import { API, CaseState, GEvent } from "@/lib/guardian";
 
 type Span = { name: string; t0: number; dur: number; attrs: Record<string, unknown> };
 
-const COLOR = (name: string) => name.startsWith("call.") ? "#0D1124" : name === "detonate" ? "#14705A" : name.startsWith("memory.") ? "#6B3FD1" : name.startsWith("tts") ? "#2E46E5" : name === "case" ? "#C3CBE0" : "#2E46E5";
+const COLOR = (name: string) => name.startsWith("call.") ? "#3A4470" : name === "detonate" ? "#14705A" : name.startsWith("memory.") ? "#6B3FD1" : name.startsWith("tts") ? "#2E46E5" : name === "case" ? "#C3CBE0" : "#2E46E5";
 const SPONSOR = (name: string) => name.startsWith("call.") ? "ElevenLabs" : name === "detonate" ? "Daytona · Anchor" : name.startsWith("memory.") ? "SurrealDB" : name.startsWith("tts") ? "ElevenLabs" : name === "eval.live" ? "Arize" : name === "signals.extract" ? "AWS Bedrock" : "";
 const fmt = (s: number) => (s < 1 ? `${Math.round(s * 1000)} ms` : s < 60 ? `${s.toFixed(1)} s` : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`);
 
@@ -47,12 +47,12 @@ export function TraceDrawer({ c, onClose, modal = false }: { c: CaseState; onClo
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <b style={{ fontSize: 15 }}>Trace · {c.id} · {c.protected}</b>
-          <span className="pill" style={{ background: "#DDF3EA", color: "var(--ok)" }}>sent to Arize AX</span>
-          <span className="pill" style={{ background: "#E4E8F1" }}>{fmt(total)} total</span>
-          {c.timeToCall != null && <span className="pill" style={{ background: "#E4E8F1" }}>first call in {c.timeToCall}s</span>}
-          {c.status !== "closed" && <span className="pill" style={{ background: "#FFF3D6", color: "#6B4A10" }}>still running</span>}
+          <span className="pill" style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>sent to Arize AX</span>
+          <span className="pill" style={{ background: "var(--chip)" }}>{fmt(total)} total</span>
+          {c.timeToCall != null && <span className="pill" style={{ background: "var(--chip)" }}>first call in {c.timeToCall}s</span>}
+          {c.status !== "closed" && <span className="pill" style={{ background: "var(--warn-soft)", color: "var(--gold-text)" }}>still running</span>}
         </span>
-        <button onClick={onClose} className="pill" style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>{modal ? "Close" : "T or Esc to close"}</button>
+        <button onClick={onClose} className="pill" style={{ cursor: "pointer", border: "1px solid var(--line)", background: "var(--card)" }}>{modal ? "Close" : "T or Esc to close"}</button>
       </div>
       <div style={{ minWidth: 0 }}>
         {spans.length === 0 && <div style={{ color: "var(--muted)" }}>No spans yet for this case.</div>}
@@ -62,7 +62,7 @@ export function TraceDrawer({ c, onClose, modal = false }: { c: CaseState; onClo
             return (
               <div key={i} style={{ display: "contents" }}>
                 <span style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={sp.name}>{sp.name}</span>
-                <div style={{ position: "relative", height: 16, background: "#F3F4F8", borderRadius: 8 }}>
+                <div style={{ position: "relative", height: 16, background: "var(--chip2)", borderRadius: 8 }}>
                   <i style={{ position: "absolute", top: 2, bottom: 2, left: `${left}%`, width: `${width}%`, borderRadius: 6, background: COLOR(sp.name) }} />
                   <small style={{ position: "absolute", left: `calc(${Math.min(left + width, 70)}% + 6px)`, top: 0, fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>{fmt(sp.dur)}{fact(sp) ? ` · ${fact(sp)}` : ""}{SPONSOR(sp.name) ? ` · ${SPONSOR(sp.name)}` : ""}</small>
                 </div>
@@ -75,16 +75,16 @@ export function TraceDrawer({ c, onClose, modal = false }: { c: CaseState; onClo
       <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
         <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>Live checks (Arize)</span>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-          {c.evals ? Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "#DDF3EA" : "#FCE4E2", color: ok ? "var(--ok)" : "#8C1D18" }}>{k.replace("_", " ")} {ok ? "✓" : "✗"}</span>) : <span style={{ color: "var(--muted)" }}>run when the case closes</span>}
+          {c.evals ? Object.entries(c.evals).map(([k, ok]) => <span key={k} className="pill" style={{ background: ok ? "var(--ok-soft)" : "var(--danger-soft)", color: ok ? "var(--ok)" : "var(--danger-text)" }}>{k.replace("_", " ")} {ok ? "✓" : "✗"}</span>) : <span style={{ color: "var(--muted)" }}>run when the case closes</span>}
         </div>
         <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>Trace id</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <code style={{ fontSize: 11, background: "#F3F4F8", padding: "3px 7px", borderRadius: 6 }}>{c.traceId ? `${c.traceId.slice(0, 8)}…${c.traceId.slice(-4)}` : "not exported (rehearsal or Arize off)"}</code>
-          {c.traceId && <button onClick={copy} className="pill" style={{ cursor: "pointer", border: "1px solid var(--line)", background: "#fff" }}>{copied ? "copied" : "copy"}</button>}
+          <code style={{ fontSize: 11, background: "var(--chip2)", padding: "3px 7px", borderRadius: 6 }}>{c.traceId ? `${c.traceId.slice(0, 8)}…${c.traceId.slice(-4)}` : "not exported (rehearsal or Arize off)"}</code>
+          {c.traceId && <button onClick={copy} className="pill" style={{ cursor: "pointer", border: "1px solid var(--line)", background: "var(--card)" }}>{copied ? "copied" : "copy"}</button>}
           <a href="https://app.arize.com" target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "var(--accent)" }}>Open Arize ↗</a>
         </div>
         <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>Sponsors on this case</span>
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{["Twilio", ...sponsors].map((s) => <span key={s} className="pill" style={{ background: "#E4E8F1" }}>{s}</span>)}</div>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{["Twilio", ...sponsors].map((s) => <span key={s} className="pill" style={{ background: "var(--chip)" }}>{s}</span>)}</div>
         {board?.overall && <><span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>Offline experiment (Arize)</span>
           <div style={{ color: "var(--muted)" }}>rules-v1 · {board.overall.n} messages · catch {Math.round(board.overall.catch_rate * 100)}% · false alarms {Math.round(board.overall.false_alarm_rate * 100)}%</div></>}
       </div>
