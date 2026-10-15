@@ -9,7 +9,7 @@
   GET  /help/{id}              the help voice note as a shareable page
   GET  /family, POST /family   setup screen
   GET  /scoreboard             Arize eval numbers for the stage scoreboard
-  POST /demo/{link|family|money}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
+  POST /demo/{link|family|money|support}?lang=en|te|es  fire a demo beat without a phone (Jasmine / Amma / Rosa)
   GET  /health                 which sponsors are live vs mock
 """
 import asyncio
@@ -59,6 +59,12 @@ def demo_text(beat: str, lang: str) -> str:
     return DEMO[beat][lang].replace("{link}", demo_link())
 DEMO["family"]["te"] = "అమ్మా నేను Daniel, కారు యాక్సిడెంట్ అయింది, పోలీస్ స్టేషన్‌లో ఉన్నాను. వేరే నంబర్ నుంచి కాల్ చేస్తున్నా, ఎవరికీ చెప్పొద్దు"
 DEMO["money"]["te"] = "అమ్మా నేను Daniel, బెయిల్ కోసం అర్జెంట్‌గా $2,000 wire పంపు. ఎవరికీ చెప్పొద్దు"
+# The protected member reports a scam phone call in her own words (Guardian can't listen to her calls; it can act on what she tells it)
+DEMO["support"] = {
+    "en": "A man from Microsoft just called, says my computer has a virus. He wants me to install AnyDesk and buy $500 Google Play cards to fix it. He is waiting on the line, call back 1-888-555-0199",
+    "es": "Me llamó un señor de Microsoft, dice que mi computadora tiene un virus. Quiere que instale AnyDesk y compre $500 en tarjetas de Google Play. Está esperando en la línea, llamar al 1-888-555-0199",
+    "te": "Microsoft నుంచి అని ఒకాయన కాల్ చేశాడు, నా కంప్యూటర్‌లో వైరస్ ఉందంట. AnyDesk ఇన్‌స్టాల్ చేయమని, $500 Google Play కార్డులు కొనమని అంటున్నాడు. లైన్‌లో వెయిట్ చేస్తున్నాడు, 1-888-555-0199",
+}
 
 
 @app.on_event("startup")

@@ -39,3 +39,10 @@ text,label,lang
 "Happy birthday! Hope you have a great day",ham,en
 "Team practice moved to 5:30 today",ham,en
 "Library: the book you reserved is ready for pickup",ham,en
+"Microsoft Security Alert: your computer is infected. Do not turn off your PC. Call 1-888-555-0199 now. Ref MS-44871",scam,en
+"A man from Microsoft just called, says my computer has a virus. He wants me to install AnyDesk and buy $500 Google Play cards to fix it",scam,en
+"Amazon refund department: you were overcharged $399. Call 1-877-555-0142 to get your refund today",scam,en
+"Me llamó alguien de soporte técnico de Microsoft, dice que mi computadora tiene un virus y quiere acceso remoto",scam,es
+"Microsoft నుంచి అని ఒకాయన కాల్ చేశాడు, నా కంప్యూటర్‌లో వైరస్ ఉందంట. AnyDesk ఇన్‌స్టాల్ చేయమని అంటున్నాడు",scam,te
+"Reminder: your Microsoft Teams meeting with the school starts at 3pm today",ham,en
+"Apple: your receipt for iCloud+ 50GB ($0.99) is available in Settings > Apple ID",ham,en

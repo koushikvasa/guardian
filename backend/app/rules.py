@@ -10,6 +10,9 @@ RULES = {
     "remembered_scam": (60, {"en": "Guardian remembers: the same {what} was a scam on {date}.", "es": "Guardian lo recuerda: el mismo {what} fue una estafa el {date}.", "te": "Guardian గుర్తుంచుకుంది: ఇదే {what} {date}న మోసం."}),
     "credential_form_offbrand": (40, {"en": "Asks for passwords or card numbers while pretending to be {brand}.", "es": "Pide contraseña o tarjeta haciéndose pasar por {brand}.", "te": "{brand} లాగా నటిస్తూ పాస్‌వర్డ్ లేదా కార్డ్ నంబర్ అడుగుతోంది."}),
     "credential_form_new_domain": (40, {"en": "Asks for passwords or card numbers on a site created {age} days ago.", "es": "Pide contraseña o tarjeta en un sitio creado hace {age} días.", "te": "{age} రోజుల క్రితం సృష్టించిన సైట్‌లో పాస్‌వర్డ్ లేదా కార్డ్ నంబర్ అడుగుతోంది."}),
+    "remote_access_request": (45, {"en": "Wants to install remote-control software on your device.", "es": "Quiere instalar un programa para controlar su dispositivo.", "te": "మీ పరికరాన్ని రిమోట్‌గా నియంత్రించే సాఫ్ట్‌వేర్ ఇన్‌స్టాల్ చేయమంటోంది."}),
+    "unsolicited_tech_support": (30, {"en": "Unsolicited \"{brand}\" support story. Real companies don't call about viruses or refunds.", "es": "Cuento de \"soporte de {brand}\" que usted no pidió. Las empresas reales no llaman por virus ni reembolsos.", "te": "మీరు అడగని \"{brand}\" సపోర్ట్ కథ. నిజమైన కంపెనీలు వైరస్ లేదా రీఫండ్ గురించి కాల్ చేయవు."}),
+    "callback_number_bait": (10, {"en": "Gives a number to call back instead of the one on your card or bill.", "es": "Da un número para llamar que no es el de su tarjeta o factura.", "te": "మీ కార్డ్ లేదా బిల్లుపై ఉన్న నంబర్ కాకుండా వేరే నంబర్‌కు కాల్ చేయమంటోంది."}),
     "untraceable_payment": (35, {"en": "Wants {method}, which can't be undone.", "es": "Pide {method}, que no se puede deshacer.", "te": "{method} అడుగుతోంది, దాన్ని వెనక్కి తీసుకోలేం."}),
     "brand_domain_mismatch": (30, {"en": "Looks like {brand}, but the address is {domain}.", "es": "Parece de {brand}, pero la dirección es {domain}.", "te": "{brand} లాగా కనిపిస్తోంది, కానీ చిరునామా {domain}."}),
     "family_claim_unsaved_number": (25, {"en": "Claims to be {name}, from a number that isn't saved.", "es": "Dice ser {name}, desde un número que no está guardado.", "te": "సేవ్ చేయని నంబర్ నుంచి {name} అని చెప్పుకుంటోంది."}),
@@ -97,6 +100,13 @@ def evaluate(signals: dict, sender: dict, detonation: dict | None, herd_hits: in
 
     if signals.get("urgency"):
         fire("urgency")
+
+    if signals.get("remote_access"):
+        fire("remote_access_request")
+    if signals.get("tech_support_claim") and not d.get("official_domain"):
+        fire("unsolicited_tech_support", brand=signals.get("brand") or {"en": "tech", "es": "técnico", "te": "టెక్"}[lang])
+        if signals.get("callback_number"):
+            fire("callback_number_bait")
 
     if sender.get("trusted") and not signals.get("claims_family_from_other_number"):
         fire("trusted_contact")

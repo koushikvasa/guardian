@@ -1,21 +1,26 @@
 {
-  "generated_at": "2026-10-14 15:27",
+  "generated_at": "2026-10-15 11:35",
   "overall": {
-    "n": 40,
-    "catch_rate": 0.9,
+    "n": 47,
+    "catch_rate": 0.92,
     "false_alarm_rate": 0.0
   },
   "by_lang": {
     "en": {
-      "n": 20,
-      "catch_rate": 0.9,
+      "n": 25,
+      "catch_rate": 0.923,
       "false_alarm_rate": 0.0
     },
     "es": {
-      "n": 20,
-      "catch_rate": 0.9,
+      "n": 21,
+      "catch_rate": 0.909,
+      "false_alarm_rate": 0.0
+    },
+    "te": {
+      "n": 1,
+      "catch_rate": 1.0,
       "false_alarm_rate": 0.0
     }
   },
-  "ms_per_message": 0.4
+  "ms_per_message": 0.3
 }

@@ -327,7 +327,12 @@ def _help_title(lang, money):
 
 
 def _story_steps(case, lang, money):
-    kind = "family" if case["signals"].get("claims_family") else "link"
+    s = case["signals"]
+    kind = "family" if s.get("claims_family") else "support" if (s.get("tech_support_claim") or s.get("remote_access")) else "link"
+    if kind == "support":
+        return {"te": ["మైక్రోసాఫ్ట్ అని చెప్పి ఒకరు కాల్ చేశారు, నా కంప్యూటర్‌లో వైరస్ అన్నారు.", "ఏదీ ఇన్‌స్టాల్ చేయమని, గిఫ్ట్ కార్డులు కొనమని అడిగారు. నేను Guardian కి చెప్పాను.", "అది మోసం. నిజమైన కంపెనీలు అలా కాల్ చేయవు."],
+                "es": ["Me llamó alguien diciendo que era de Microsoft, que mi computadora tenía un virus.", "Quería que instalara un programa y comprara tarjetas de regalo. Se lo conté a Guardian.", "Era una estafa. Las empresas reales no llaman así."],
+                "en": ["Someone called saying they were Microsoft and my computer had a virus.", "They wanted me to install a program and buy gift cards. I told Guardian.", "It was a scam. Real companies don't call like that."]}[lang if lang in ("te", "es") else "en"]
     if lang == "te":
         if kind == "family":
             return ["ఎవరో నా కొడుకునని చెప్పి డబ్బు అడిగారు.", "Guardian నా అసలు కొడుకుకి కాల్ చేసింది. అతను బాగానే ఉన్నాడు.", "అది మోసం. నేను ఏమీ పంపలేదు."]

@@ -80,7 +80,7 @@ export function useGuardian() {
 export type Lang = "en" | "te" | "es";
 export const LANG_NAME: Record<string, string> = { en: "English", te: "Telugu", es: "Spanish" };
 
-export async function fireDemo(beat: "link" | "family" | "money", lang: Lang = "en") {
+export async function fireDemo(beat: "link" | "family" | "money" | "support", lang: Lang = "en") {
   return fetch(`${API}/demo/${beat}?lang=${lang}`, { method: "POST" }).then((r) => r.json());
 }
 

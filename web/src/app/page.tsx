@@ -35,6 +35,7 @@ export default function Home() {
         <button className="btn btn-dark" onClick={() => fireDemo("link", lang)}>Fire demo: bank link</button>
         <button className="btn btn-dark" onClick={() => fireDemo("family", lang)}>Fire demo: &ldquo;It&rsquo;s Daniel&rdquo;</button>
         <button className="btn btn-dark" onClick={() => fireDemo("money", lang)}>Fire demo: $2,000 wire</button>
+        <button className="btn btn-dark" onClick={() => fireDemo("support", lang)}>Fire demo: &ldquo;Microsoft&rdquo; call</button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
