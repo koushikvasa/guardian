@@ -123,7 +123,7 @@ async def ingest(payload: dict, bg: BackgroundTasks):
         return {"ok": True, "skipped": "family"}
     rosa = graph.by_role("protected")[0]
     bus.emit("sms.in", None, frm=sender, body=text, via="auto")
-    bg.add_task(pipeline.handle_message, payload.get("phone") or rosa["phone"], text, sender or None)
+    bg.add_task(pipeline.handle_message, payload.get("phone") or rosa["phone"], text, sender or None, None, True)
     return {"ok": True}
 
 

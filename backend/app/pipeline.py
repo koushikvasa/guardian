@@ -57,17 +57,20 @@ def _who(from_phone: str, body: str, protected_id: str | None) -> dict:
     return cands[0] if cands else graph.by_role("protected")[0]
 
 
-async def handle_message(from_phone: str, body: str, original_sender: str | None = None, protected_id: str | None = None) -> dict:
+async def handle_message(from_phone: str, body: str, original_sender: str | None = None, protected_id: str | None = None,
+                         quiet: bool = False) -> dict:
+    """quiet=True for auto-forwarded texts: Guardian only speaks up when something is wrong, never on a harmless text."""
     protected = _who(from_phone, body, protected_id)
     lang = protected.get("lang") or detect_lang(body)
     case_id = f"A-{next(_ids)}"
-    case = {"id": case_id, "protected": protected["id"], "lang": lang, "status": "open",
+    case = {"id": case_id, "protected": protected["id"], "lang": lang, "status": "open", "quiet": quiet,
             "opened_at": time.time(), "text": scrub(body), "outbound": []}
     cases[case_id] = case
 
     with span("case", case=case_id, lang=lang) as root:
-        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang)
-        await _sms(case, protected["phone"], t("ack", lang))
+        bus.emit("case.opened", case_id, protected=protected["name"], text=case["text"], lang=lang, quiet=quiet)
+        if not quiet:
+            await _sms(case, protected["phone"], t("ack", lang))
 
         signals = await asyncio.to_thread(extract, case["text"])
         case["signals"] = signals
@@ -143,6 +146,8 @@ async def _sms(case: dict, to: str, body: str):
 async def text_verdict(case, protected, v):
     lang = case["lang"]
     if v.label == "safe":
+        if case.get("quiet"):
+            return  # auto-forwarded and harmless: say nothing
         reason = next((f["reason"] for f in v.fired if f["weight"] < 0), "")
         await _sms(case, protected["phone"], t("safe", lang, reason=reason))
     elif v.label == "suspicious":
