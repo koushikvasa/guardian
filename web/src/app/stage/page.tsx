@@ -92,7 +92,7 @@ export default function Stage() {
   const sponsors = lit(c, health);
 
   return (
-    <main ref={stage} style={{ minHeight: "100vh", padding: "18px 26px 14px", display: "grid", gridTemplateColumns: showD ? "300px 1fr 300px" : "300px 1fr", gridTemplateRows: "auto 1fr auto", gap: "14px 26px", position: "relative", overflow: "hidden", transition: "grid-template-columns .4s" }}>
+    <main ref={stage} style={{ height: "100vh", padding: "14px 24px 10px", display: "grid", gridTemplateColumns: showD ? "auto 1fr auto" : "auto 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "12px 24px", position: "relative", overflow: "hidden" }}>
       {/* top bar */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18 }}><Mark size={40} tilt={false} /> Guardian</div>
@@ -124,7 +124,7 @@ export default function Stage() {
       </div>
 
       {/* desk */}
-      <div ref={desk} style={{ minWidth: 0 }}>
+      <div ref={desk} style={{ minWidth: 0, minHeight: 0 }}>
         {c ? (
           <Desk c={c} who={who} lookAt={lookAt} />
         ) : (
