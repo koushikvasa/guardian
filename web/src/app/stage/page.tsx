@@ -12,6 +12,7 @@ const BEATS: { key: Beat; hot: string; label: string }[] = [
   { key: "link", hot: "1", label: "bank link" }, { key: "family", hot: "2", label: "“it’s Daniel”" }, { key: "money", hot: "3", label: "$2,000 wire" }, { key: "support", hot: "4", label: "“Microsoft” call" },
 ];
 const SPONSORS = ["Twilio", "Anchor", "Daytona", "SurrealDB", "ElevenLabs", "Arize", "AWS"];
+const CANVAS_W = 1600, CANVAS_H = 900;  // the stage is a fixed canvas scaled to fit any screen, like a slide
 
 function needsDaniel(c: CaseState | undefined) { return !!c && (!!c.money || !!c.calls.verify || !!c.calls.second_key); }
 
@@ -34,7 +35,12 @@ export default function Stage() {
   const [lang, setLang] = useState<Lang>("en");
   const [sel, setSel] = useState<string | null>(null);
   const [dry, setDry] = useState(true);
-  const [panel, setPanel] = useState(false);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
+  const [panel, setPanel] = useState(false);
+  const [fit, setFit] = useState({ scale: 1, left: 0, top: 0 });
+  useEffect(() => {
+    const calc = () => { const sc = Math.min(window.innerWidth / CANVAS_W, window.innerHeight / CANVAS_H); setFit({ scale: sc, left: (window.innerWidth - CANVAS_W * sc) / 2, top: (window.innerHeight - CANVAS_H * sc) / 2 }); };
+    calc(); window.addEventListener("resize", calc); return () => window.removeEventListener("resize", calc);
+  }, []);  // rehearsal by default: live beats cost texts and calls, so they are a deliberate switch
   const [texts, setTexts] = useState<{ sent: number; budget: number | null } | null>(null);
   const c = (sel && g.cases[sel]) || g.latest;
   const who = c?.protected || PROTECTED[lang];
@@ -66,13 +72,14 @@ export default function Stage() {
   const flyTo = useCallback((from: HTMLElement | null, to: HTMLElement | null, text: string, inbound: boolean) => {
     const s = stage.current; if (!s || !from || !to) return;
     const sr = s.getBoundingClientRect(), a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+    const k = 1 / (sr.width / CANVAS_W);  // screen px -> canvas px
     const f = document.createElement("div");  // one element per flight: it can never get stuck
     f.className = `fly${inbound ? " in" : ""}`; f.textContent = text.slice(0, 90); f.setAttribute("aria-hidden", "true");
     f.style.transition = "none"; f.style.opacity = "1";
-    f.style.left = `${a.left - sr.left + a.width * 0.3}px`; f.style.top = `${a.top - sr.top + a.height * 0.25}px`;
+    f.style.left = `${(a.left - sr.left + a.width * 0.3) * k}px`; f.style.top = `${(a.top - sr.top + a.height * 0.25) * k}px`;
     s.appendChild(f);
-    const dx = (b.left - sr.left + b.width * 0.2) - (a.left - sr.left + a.width * 0.3);
-    const dy = (b.top - sr.top + b.height * 0.35) - (a.top - sr.top + a.height * 0.25);
+    const dx = ((b.left - sr.left + b.width * 0.2) - (a.left - sr.left + a.width * 0.3)) * k;
+    const dy = ((b.top - sr.top + b.height * 0.35) - (a.top - sr.top + a.height * 0.25)) * k;
     const anim = f.animate(
       [{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.72)`, opacity: 1, offset: 0.8 }, { transform: `translate(${dx}px,${dy}px) scale(.72)`, opacity: 0 }],
       { duration: 1000, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" },
@@ -104,7 +111,8 @@ export default function Stage() {
   const sponsors = lit(c, health);
 
   return (
-    <main ref={stage} style={{ height: "100vh", padding: "14px 24px 10px", display: "grid", gridTemplateColumns: showD ? "auto 1fr auto" : "auto 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "12px 24px", position: "relative", overflow: "hidden" }}>
+    <main style={{ height: "100vh", overflow: "hidden", position: "relative", background: "var(--bg)" }}>
+    <div ref={stage} style={{ position: "absolute", left: fit.left, top: fit.top, width: CANVAS_W, height: CANVAS_H, transform: `scale(${fit.scale})`, transformOrigin: "top left", padding: "16px 28px 12px", display: "grid", gridTemplateColumns: showD ? "300px 1fr 300px" : "300px 1fr", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: "14px 28px", overflow: "hidden" }}>
       {/* top bar: what the room should see */}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPanel((v) => !v)} title="P: presenter controls" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18, background: "none", border: 0, font: "inherit", cursor: "pointer", color: "inherit", padding: 0 }}><Mark size={40} tilt={false} /> Guardian</button>
@@ -122,7 +130,7 @@ export default function Stage() {
 
       {/* presenter drawer: P or the logo */}
       {panel && (
-        <div style={{ position: "absolute", left: 24, right: 24, top: 64, zIndex: 20, background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 18px 40px rgba(22,27,51,.16)" }}>
+        <div style={{ position: "absolute", left: 28, right: 28, top: 66, zIndex: 20, background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 18px 40px rgba(22,27,51,.16)" }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginRight: 6 }}>Demo as</span>
             {(["en", "te", "es"] as Lang[]).map((l) => (
@@ -187,6 +195,7 @@ export default function Stage() {
           {texts && texts.budget != null && <span className="pill" style={{ background: "#F3F4F8", color: "var(--muted)" }}>texts {texts.sent}/{texts.budget}</span>}
         </div>
       </div>
+    </div>
     </main>
   );
 }
